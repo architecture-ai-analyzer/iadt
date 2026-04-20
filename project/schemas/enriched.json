@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "EnrichedJSON",
+  "description": "Saída da P2 — JSON canônico + riscos identificados",
+  "type": "object",
+  "required": ["components", "relationships", "uncertainties", "risks"],
+  "additionalProperties": false,
+  "properties": {
+    "components": { "$ref": "canonical.json#/properties/components" },
+    "relationships": { "$ref": "canonical.json#/properties/relationships" },
+    "uncertainties": { "$ref": "canonical.json#/properties/uncertainties" },
+    "risks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["type", "description", "affected_components", "severity", "evidence"],
+        "additionalProperties": false,
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "single_point_of_failure",
+              "centralized_database",
+              "missing_edge_auth",
+              "unmediated_external",
+              "excessive_coupling"
+            ]
+          },
+          "description": { "type": "string", "minLength": 1 },
+          "affected_components": {
+            "type": "array",
+            "items": { "type": "string" },
+            "minItems": 1
+          },
+          "severity": { "type": "string", "enum": ["low", "medium", "high"] },
+          "evidence": { "type": "string", "minLength": 1 }
+        }
+      }
+    }
+  }
+}

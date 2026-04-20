@@ -1,0 +1,25 @@
+[project]
+name = "iadt-pipeline"
+version = "0.1.0"
+requires-python = ">=3.11"
+dependencies = [
+    "anthropic>=0.40.0",
+    "pymupdf>=1.24.0",
+    "pdf2image>=1.17.0",
+    "jsonschema>=4.23.0",
+    "python-dotenv>=1.0.0",
+    "Pillow>=10.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.0",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["config*", "llm*", "pipelines*", "orchestrator*", "schemas*"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"

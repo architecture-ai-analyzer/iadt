@@ -1,0 +1,66 @@
+HACKATHON -  IA PARA DEVS (IADT)
+<*Não devemos se preocupar com isso no nosso fluxo.>
+
+O problema: 
+Empresas que operam sistemas distribuídos possuem dezenas de diagramas de 
+arquitetura, geralmente armazenados como imagens ou PDFs.
+
+Objetivo:
+● Receber diagramas de arquitetura* (Imagem ou PDF);
+● Processar esses diagramas; 
+● Aplicar IA para análise automática; 
+● Gerar um relatório técnico estruturado;
+
+Escopo do MVP:
+1. Upload de um diagrama de arquitetura*.
+2. Processamento do diagrama. 
+3. Análise automatizada. 
+4. Geração de relatório técnico. 
+5. Consulta do status do processamento*.
+
+Alunos(as) IADT 
+Responsáveis por: 
+● Processamento do diagrama; 
+● Extração de informações com IA; 
+● Classificação ou análise automatizada; 
+● Geração do conteúdo do relatório; 
+● Avaliação básica da IA.
+
+## Requisitos funcionais 
+<### Funcionalidades obrigatórias: Consulta de status do processamento: 
+○ Recebido; 
+○ Em processamento; 
+○ Analisado; 
+○ Erro.>*
+
+### Geração de relatório contendo: 
+○ Componentes identificados; 
+○ Possíveis riscos arquiteturais; 
+○ Recomendações básicas. 
+
+# Inteligência Artificial (IADT)
+
+A IA deve implementar ao menos uma das abordagens abaixo, considerando práticas de segurança,
+controle e avaliação do modelo: 
+● Detecção de componentes arquiteturais em imagens; 
+● Classificação de riscos arquiteturais a partir de regras + ML; 
+● Uso de LLM para geração de relatório técnico estruturado, com implementação 
+de guardrails para controle de entrada, saída e mitigação de alucinações; 
+● Análise textual baseada em prompt engineering, incluindo validação de 
+prompts, restrições de formato e avaliação da consistência das respostas. 
+Requisitos mínimos: 
+● Pipeline claro de IA; 
+● Justificativa da abordagem escolhida; 
+● Demonstração prática da análise; 
+● Discussão de limitações do modelo.
+
+
+
+
+
+
+
+
+
+
+
