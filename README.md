@@ -5,7 +5,7 @@ Pipeline de IA que recebe um diagrama de arquitetura (imagem ou PDF) e gera auto
 ## Pré-requisitos
 
 - Python 3.11+
-- Chave de API do provedor LLM escolhido (Anthropic, OpenAI ou Ollama local)
+- Chave de API do provedor LLM escolhido (Anthropic ou OpenAI)
 
 ## Instalação
 
@@ -28,12 +28,6 @@ ANTHROPIC_API_KEY=sua-chave-aqui
 ```env
 LLM_PROVIDER=openai
 OPENAI_API_KEY=sua-chave-aqui
-```
-
-**Ollama (local, sem custo)**
-```env
-LLM_PROVIDER=ollama
-OLLAMA_BASE_URL=http://localhost:11434
 ```
 
 ## Como usar

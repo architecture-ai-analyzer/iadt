@@ -2,14 +2,12 @@ import base64
 from pathlib import Path
 from typing import Any
 
-from config.settings import LLM_PROVIDER, CLAUDE_MODEL_VISION, OPENAI_MODEL_VISION, OLLAMA_MODEL_VISION, OLLAMA_BASE_URL
+from config.settings import LLM_PROVIDER, CLAUDE_MODEL_VISION, OPENAI_MODEL_VISION
 from llm.client import call_with_retry, parse_json_response
 
 
 def call_vision(image_path: Path, prompt: str, reinforced_prompt: str | None = None) -> dict[str, Any]:
     def _call(p: str):
-        if LLM_PROVIDER == "ollama":
-            return _ollama_vision(image_path, p)
         if LLM_PROVIDER == "openai":
             return _openai_vision(image_path, p)
         return _anthropic_vision(image_path, p)
@@ -28,8 +26,6 @@ def call_vision_with_text(image_path: Path, extracted_text: str, prompt: str, re
     full_prompt = f"Texto extraído do PDF:\n\n{extracted_text}\n\n---\n\n{prompt}"
 
     def _call(p: str):
-        if LLM_PROVIDER == "ollama":
-            return _ollama_vision(image_path, p)
         if LLM_PROVIDER == "openai":
             return _openai_vision_with_text(image_path, extracted_text, p)
         return _anthropic_vision_with_text(image_path, extracted_text, p)
@@ -43,20 +39,6 @@ def call_vision_with_text(image_path: Path, extracted_text: str, prompt: str, re
             raw2 = call_with_retry(lambda: _call(full_reinforced), context="vision_text_extraction_retry")
             return parse_json_response(raw2, context="vision_text_extraction_retry")
         raise
-
-
-def _ollama_vision(image_path: Path, prompt: str) -> str:
-    import ollama
-    client = ollama.Client(host=OLLAMA_BASE_URL)
-    response = client.chat(
-        model=OLLAMA_MODEL_VISION,
-        messages=[{
-            "role": "user",
-            "content": prompt,
-            "images": [str(image_path)],
-        }],
-    )
-    return response["message"]["content"]
 
 
 def _anthropic_vision(image_path: Path, prompt: str) -> str:
