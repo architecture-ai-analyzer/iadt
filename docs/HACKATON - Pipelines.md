@@ -55,28 +55,29 @@ Arquivo (img/pdf)
 ## 3. Pipeline 1 — Extração
 
 ### O que faz
+
 Recebe o arquivo original, identifica como tratá-lo e extrai componentes, relações e textos do diagrama, produzindo uma estrutura intermediária padronizada.
 
 ### Entrada
+
 - arquivo local: `.pdf`, `.png`, `.jpg`, `.jpeg`
 
 ### Saída
+
 - JSON canônico:
 
 ```json
 {
   "components": [
-    {"name": "API Gateway", "type": "gateway"},
-    {"name": "Auth Service", "type": "service"},
-    {"name": "Orders DB", "type": "database"}
+    { "name": "API Gateway", "type": "gateway" },
+    { "name": "Auth Service", "type": "service" },
+    { "name": "Orders DB", "type": "database" }
   ],
   "relationships": [
-    {"from": "API Gateway", "to": "Auth Service", "label": "HTTP"},
-    {"from": "Auth Service", "to": "Orders DB", "label": "SQL"}
+    { "from": "API Gateway", "to": "Auth Service", "label": "HTTP" },
+    { "from": "Auth Service", "to": "Orders DB", "label": "SQL" }
   ],
-  "uncertainties": [
-    "Não foi possível confirmar redundância do banco"
-  ]
+  "uncertainties": ["Não foi possível confirmar redundância do banco"]
 }
 ```
 
@@ -85,6 +86,7 @@ Recebe o arquivo original, identifica como tratá-lo e extrai componentes, rela�
 Internamente, a pipeline resolve a rota de extração conforme o tipo de arquivo:
 
 **1. Classificação do arquivo (detalhe interno)**
+
 - Se extensão é `.png`, `.jpg`, `.jpeg` → trata como imagem
 - Se extensão é `.pdf`:
   - tenta extrair texto com lib programática (`PyMuPDF` ou `pdfplumber`)
@@ -92,28 +94,33 @@ Internamente, a pipeline resolve a rota de extração conforme o tipo de arquivo
   - se pouco ou nenhum texto → trata como PDF escaneado
 
 **2. Extração conforme tipo**
+
 - **imagem** → envia direto para API multimodal (Claude/GPT-4o) com prompt estruturado que exige JSON canônico
 - **PDF escaneado** → converte para imagem(ns) por página (`pdf2image` ou `PyMuPDF`) → envia para API multimodal
 - **PDF exportado** → extrai texto/estrutura programaticamente + envia texto extraído junto com imagem renderizada para API multimodal (contexto textual rico + visão do layout)
 
 ### Justificativa
+
 A API multimodal faz extração visual, leitura de texto e interpretação semântica em uma única chamada. A classificação do tipo de arquivo é um detalhe interno de implementação — o que importa para o pipeline é que esta etapa recebe um arquivo e entrega um JSON estruturado. Separar rotas por tipo maximiza a qualidade: PDFs exportados preservam texto nítido que o modelo recebe como contexto adicional, evitando depender apenas de pixels.
 
 ### Guardrails
+
 - prompt exige resposta em JSON válido com schema definido
 - prompt proíbe inventar componentes não visíveis no diagrama
 - prompt exige campo `uncertainties` quando houver ambiguidade
 
 ### Tratamento de erros
-| Falha | Ação |
-|---|---|
-| Arquivo não é imagem nem PDF válido | rejeita com motivo: "formato não suportado" |
-| API multimodal retorna erro HTTP ou timeout | retry uma vez; se falhar novamente, encerra com erro: "falha na extração — serviço indisponível" |
-| API retorna resposta que não é JSON válido | retry uma vez com prompt reforçado; se falhar, encerra com erro: "resposta da IA fora do formato esperado" |
-| JSON retornado não tem campo `components` | encerra com erro: "extração incompleta — sem componentes identificados" |
-| Conversão PDF→imagem falha | encerra com erro: "falha na conversão do PDF" |
+
+| Falha                                       | Ação                                                                                                       |
+| ------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| Arquivo não é imagem nem PDF válido         | rejeita com motivo: "formato não suportado"                                                                |
+| API multimodal retorna erro HTTP ou timeout | retry uma vez; se falhar novamente, encerra com erro: "falha na extração — serviço indisponível"           |
+| API retorna resposta que não é JSON válido  | retry uma vez com prompt reforçado; se falhar, encerra com erro: "resposta da IA fora do formato esperado" |
+| JSON retornado não tem campo `components`   | encerra com erro: "extração incompleta — sem componentes identificados"                                    |
+| Conversão PDF→imagem falha                  | encerra com erro: "falha na conversão do PDF"                                                              |
 
 ### Logs
+
 - tipo de arquivo recebido e classificação interna (imagem / pdf_exportado / pdf_escaneado)
 - rota de extração seguida
 - tempo de resposta da API multimodal
@@ -126,12 +133,15 @@ A API multimodal faz extração visual, leitura de texto e interpretação semâ
 ## 4. Pipeline 2 — Análise de riscos
 
 ### O que faz
+
 Aplica regras determinísticas sobre a estrutura extraída para identificar riscos arquiteturais básicos.
 
 ### Entrada
+
 - JSON canônico (vindo da P1)
 
 ### Saída
+
 - JSON enriquecido (JSON canônico + riscos):
 
 ```json
@@ -152,6 +162,7 @@ Aplica regras determinísticas sobre a estrutura extraída para identificar risc
 ```
 
 ### Catálogo de regras (MVP)
+
 1. **Ponto único de falha** — componente com muitas conexões de entrada e sem réplica aparente
 2. **Banco centralizado** — um único banco atendendo muitos serviços
 3. **Ausência de autenticação em borda** — componente exposto externamente sem menção a auth/gateway
@@ -159,21 +170,25 @@ Aplica regras determinísticas sobre a estrutura extraída para identificar risc
 5. **Acoplamento excessivo** — componente com número de conexões acima de threshold
 
 ### Justificativa
+
 Regras determinísticas são explicáveis e repetíveis. O mesmo JSON sempre produz os mesmos riscos. Isso complementa o LLM (que é probabilístico) com uma camada previsível e auditável.
 
 ### Guardrails
+
 - todo risco precisa de `evidence` (não pode apontar risco sem justificativa)
 - severity limitada a valores fixos: `low`, `medium`, `high`
 - se nenhum risco for encontrado, retorna lista vazia (não inventa)
 
 ### Tratamento de erros
-| Falha | Ação |
-|---|---|
-| JSON de entrada sem campo `components` | encerra com erro: "JSON de entrada inválido para análise de riscos" |
+
+| Falha                                     | Ação                                                                  |
+| ----------------------------------------- | --------------------------------------------------------------------- |
+| JSON de entrada sem campo `components`    | encerra com erro: "JSON de entrada inválido para análise de riscos"   |
 | JSON de entrada sem campo `relationships` | processa apenas riscos que não dependem de relações; registra warning |
-| Erro interno na execução de uma regra | pula a regra com falha, registra warning, continua com as demais |
+| Erro interno na execução de uma regra     | pula a regra com falha, registra warning, continua com as demais      |
 
 ### Logs
+
 - quantidade de componentes e relações recebidos
 - cada regra executada e seu resultado (risco encontrado ou não)
 - quantidade total de riscos identificados com distribuição por severity
@@ -184,61 +199,76 @@ Regras determinísticas são explicáveis e repetíveis. O mesmo JSON sempre pro
 ## 5. Pipeline 3 — Geração do relatório
 
 ### O que faz
+
 Gera o relatório técnico estruturado a partir dos dados já extraídos e analisados.
 
 ### Entrada
+
 - JSON enriquecido (vindo da P2)
 
 ### Saída
+
 - relatório técnico em Markdown com a seguinte estrutura:
 
 ```markdown
 # Relatório de Análise de Arquitetura
 
 ## 1. Resumo executivo
+
 [síntese da análise]
 
 ## 2. Componentes identificados
+
 [lista de componentes com tipo e descrição]
 
 ## 3. Relações observadas
+
 [conexões entre componentes]
 
 ## 4. Riscos arquiteturais
+
 [riscos identificados com severidade e evidência]
 
 ## 5. Recomendações
+
 [sugestões práticas para mitigar os riscos]
 
 ## 6. Limitações da análise
+
 [o que o sistema não conseguiu determinar]
 
 ## 7. Nível de confiança
+
 [avaliação geral da confiabilidade da análise]
 ```
 
 ### Como implementar
+
 - LLM recebe o JSON enriquecido + prompt com instruções de formato
 - o LLM **sintetiza**, não extrai — toda informação já está no JSON
 - pode usar Ollama local (Llama 3, Mistral, Qwen) ou API — não precisa de visão, é texto→texto
 
 ### Justificativa
+
 O relatório nasce de dados já estruturados e validados, não da imagem bruta. Isso reduz alucinação e garante consistência. A separação entre extração (P1) e geração (P3) é o ponto central do pipeline: o LLM recebe fatos, não interpreta pixels.
 
 ### Guardrails
+
 - prompt proíbe inventar componentes ou riscos não presentes no JSON
 - prompt exige todas as seções do template
 - prompt exige seção de limitações mesmo quando a análise parece completa
 - formato de saída fixo (Markdown com headers definidos)
 
 ### Tratamento de erros
-| Falha | Ação |
-|---|---|
-| LLM retorna erro HTTP ou timeout | retry uma vez; se falhar, encerra com erro: "falha na geração do relatório — serviço indisponível" |
-| LLM retorna texto vazio | retry uma vez; se falhar, encerra com erro: "LLM retornou resposta vazia" |
-| LLM retorna relatório sem seções obrigatórias | retry uma vez com prompt reforçado; se falhar, encerra com erro: "relatório incompleto" |
+
+| Falha                                         | Ação                                                                                               |
+| --------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| LLM retorna erro HTTP ou timeout              | retry uma vez; se falhar, encerra com erro: "falha na geração do relatório — serviço indisponível" |
+| LLM retorna texto vazio                       | retry uma vez; se falhar, encerra com erro: "LLM retornou resposta vazia"                          |
+| LLM retorna relatório sem seções obrigatórias | retry uma vez com prompt reforçado; se falhar, encerra com erro: "relatório incompleto"            |
 
 ### Logs
+
 - modelo LLM utilizado
 - tempo de resposta do LLM
 - tamanho do relatório gerado (caracteres)
@@ -250,34 +280,41 @@ O relatório nasce de dados já estruturados e validados, não da imagem bruta. 
 ## 6. Pipeline 4 — Validação
 
 ### O que faz
+
 Valida a saída final antes de considerá-la pronta.
 
 ### Entrada
+
 - relatório Markdown (vindo da P3)
 - JSON enriquecido (vindo da P2)
 
 ### Saída
+
 - resultado final validado
 - ou rejeição com motivo
 
 ### Validações
+
 1. **Estrutura do relatório**: todas as 7 seções obrigatórias estão presentes
 2. **Consistência**: componentes mencionados no relatório existem no JSON
 3. **Completude**: nenhum risco do JSON foi omitido no relatório
 4. **Formato**: relatório segue Markdown válido
 
 ### Justificativa
+
 Validação automática é a última barreira antes da entrega. Garante que o pipeline não entregou lixo mesmo que alguma etapa anterior tenha falhado parcialmente.
 
 ### Tratamento de erros
-| Falha | Ação |
-|---|---|
-| Seção obrigatória ausente no relatório | rejeita com motivo: "seção X ausente" |
+
+| Falha                                          | Ação                                                                                                     |
+| ---------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| Seção obrigatória ausente no relatório         | rejeita com motivo: "seção X ausente"                                                                    |
 | Componente no relatório que não existe no JSON | rejeita com motivo: "componente fabricado detectado — Y mencionado no relatório mas ausente na extração" |
-| Risco do JSON omitido no relatório | rejeita com motivo: "risco Z não foi incluído no relatório" |
-| Markdown malformado | rejeita com motivo: "formato do relatório inválido" |
+| Risco do JSON omitido no relatório             | rejeita com motivo: "risco Z não foi incluído no relatório"                                              |
+| Markdown malformado                            | rejeita com motivo: "formato do relatório inválido"                                                      |
 
 ### Logs
+
 - resultado da validação (aprovado / rejeitado)
 - lista de validações executadas com resultado individual
 - motivo da rejeição, se aplicável
@@ -286,54 +323,58 @@ Validação automática é a última barreira antes da entrega. Garante que o pi
 
 ## 7. Requisitos de IA atendidos
 
-| Requisito do enunciado | Como atendemos |
-|---|---|
-| Detecção de componentes arquiteturais em imagens | P1 — API multimodal extrai componentes do diagrama |
-| Classificação de riscos a partir de regras + ML | P1 (ML — API multimodal extrai a estrutura) + P2 (regras determinísticas classificam riscos sobre essa estrutura) |
-| LLM para geração de relatório com guardrails | P3 — LLM com prompt controlado, formato fixo, restrições |
-| Análise textual com prompt engineering | P1 + P3 — prompts estruturados com restrições de formato; P4 — avaliação de consistência das respostas |
-| Pipeline claro de IA | 4 pipelines sequenciais com entrada/saída definidas |
-| Justificativa da abordagem | cada pipeline tem justificativa técnica |
-| Demonstração prática | execução ponta a ponta com artefatos intermediários visíveis |
-| Discussão de limitações | seção obrigatória no relatório + seção 10 deste documento |
+| Requisito do enunciado                           | Como atendemos                                                                                                    |
+| ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------- |
+| Detecção de componentes arquiteturais em imagens | P1 — API multimodal extrai componentes do diagrama                                                                |
+| Classificação de riscos a partir de regras + ML  | P1 (ML — API multimodal extrai a estrutura) + P2 (regras determinísticas classificam riscos sobre essa estrutura) |
+| LLM para geração de relatório com guardrails     | P3 — LLM com prompt controlado, formato fixo, restrições                                                          |
+| Análise textual com prompt engineering           | P1 + P3 — prompts estruturados com restrições de formato; P4 — avaliação de consistência das respostas            |
+| Pipeline claro de IA                             | 4 pipelines sequenciais com entrada/saída definidas                                                               |
+| Justificativa da abordagem                       | cada pipeline tem justificativa técnica                                                                           |
+| Demonstração prática                             | execução ponta a ponta com artefatos intermediários visíveis                                                      |
+| Discussão de limitações                          | seção obrigatória no relatório + seção 10 deste documento                                                         |
 
 ---
 
 ## 8. Stack de IA
 
-| Componente | Tecnologia | Justificativa |
-|---|---|---|
-| Classificação de tipo de arquivo | `PyMuPDF` / `pdfplumber` | extração de texto de PDF sem IA, leve e confiável |
-| Conversão PDF escaneado → imagem | `pdf2image` / `PyMuPDF` | lib simples, sem dependência pesada |
-| Extração (visão) | API multimodal (Claude / GPT-4o) | melhor qualidade de extração visual; custo ~$0.01/imagem |
-| Análise de riscos | Python puro (regras) | determinístico, sem dependência de modelo |
-| Geração de relatório | Ollama local (Llama 3 / Mistral / Qwen) ou API | texto→texto, não precisa de visão |
-| Validação | Python puro (checagem de schema/formato) | determinístico, sem dependência de modelo |
-| Logs | `logging` (Python stdlib) com formato estruturado (JSON) | sem dependência extra, fácil de integrar com observabilidade |
+| Componente                       | Tecnologia                                               | Justificativa                                                |
+| -------------------------------- | -------------------------------------------------------- | ------------------------------------------------------------ |
+| Classificação de tipo de arquivo | `PyMuPDF` / `pdfplumber`                                 | extração de texto de PDF sem IA, leve e confiável            |
+| Conversão PDF escaneado → imagem | `pdf2image` / `PyMuPDF`                                  | lib simples, sem dependência pesada                          |
+| Extração (visão)                 | API multimodal (Claude / GPT-4o)                         | melhor qualidade de extração visual; custo ~$0.01/imagem     |
+| Análise de riscos                | Python puro (regras)                                     | determinístico, sem dependência de modelo                    |
+| Geração de relatório             | Ollama local (Llama 3 / Mistral / Qwen) ou API           | texto→texto, não precisa de visão                            |
+| Validação                        | Python puro (checagem de schema/formato)                 | determinístico, sem dependência de modelo                    |
+| Logs                             | `logging` (Python stdlib) com formato estruturado (JSON) | sem dependência extra, fácil de integrar com observabilidade |
 
 ---
 
 ## 9. Segurança da IA
 
 ### Validação e tratamento de entradas não confiáveis
+
 - P1 valida extensão do arquivo antes de qualquer processamento
 - P1 rejeita arquivos que não são imagem nem PDF válido
 - P2 valida schema do JSON de entrada antes de aplicar regras
 - nenhum dado do usuário é passado diretamente ao prompt sem tratamento
 
 ### Uso controlado de modelos de IA
+
 - prompts da P1 e P3 têm escopo fixo: extrair estrutura ou sintetizar relatório
 - prompts incluem restrições explícitas (não inventar, não extrapolar)
 - formato de saída é definido por schema (P1) e template (P3)
 - modelos são chamados com temperature baixa para maximizar previsibilidade
 
 ### Tratamento seguro de falhas da IA
+
 - toda chamada a modelo (P1, P3) tem retry limitado (máximo 1 retry)
 - respostas fora do formato esperado são rejeitadas, não aproveitadas parcialmente
 - falhas resultam em erro explícito com motivo, nunca em saída silenciosamente degradada
 - P4 é a última barreira: mesmo que P1 ou P3 falhem parcialmente, a validação detecta
 
 ### Riscos e limitações de segurança
+
 - diagramas podem conter dados sensíveis (IPs, nomes de serviços internos) que são enviados à API externa — risco mitigado se usar Ollama local para P3
 - prompt injection: um diagrama malicioso poderia conter texto que tenta manipular o prompt — mitigado pelo schema fixo de saída e validação na P4
 - a API multimodal é um serviço externo: disponibilidade e latência não estão sob nosso controle
@@ -344,12 +385,14 @@ Validação automática é a última barreira antes da entrega. Garante que o pi
 ## 10. Limitações conhecidas
 
 ### Limitações técnicas
+
 - diagramas de baixa resolução reduzem qualidade da extração
 - diagramas muito densos podem gerar extração incompleta
 - setas e conectores pequenos podem ser ignorados pelo modelo
 - siglas sem contexto podem ser classificadas incorretamente
 
 ### Limitações de escopo
+
 - o MVP não substitui arquiteto humano
 - os riscos são indícios, não diagnóstico final
 - as recomendações são básicas
@@ -360,40 +403,45 @@ Validação automática é a última barreira antes da entrega. Garante que o pi
 
 ## 11. Ordem de implementação
 
-| Ordem | Pipeline | Motivo |
-|---|---|---|
-| 1 | P1 — Extração | é o coração do sistema; define a qualidade de tudo que vem depois |
-| 2 | P2 — Análise de riscos | depende do JSON da P1; regras simples, implementação rápida |
-| 3 | P3 — Geração do relatório | depende do JSON enriquecido da P2; é a entrega visível |
-| 4 | P4 — Validação | última etapa; garante qualidade mínima antes de entregar |
+| Ordem | Pipeline                  | Motivo                                                            |
+| ----- | ------------------------- | ----------------------------------------------------------------- |
+| 1     | P1 — Extração             | é o coração do sistema; define a qualidade de tudo que vem depois |
+| 2     | P2 — Análise de riscos    | depende do JSON da P1; regras simples, implementação rápida       |
+| 3     | P3 — Geração do relatório | depende do JSON enriquecido da P2; é a entrega visível            |
+| 4     | P4 — Validação            | última etapa; garante qualidade mínima antes de entregar          |
 
 ---
 
 ## 12. Testes
 
 ### Estratégia
+
 Cada pipeline é testável isoladamente porque tem entrada e saída bem definidas.
 
 ### Testes por pipeline
 
 **P1 — Extração**
+
 - dado um diagrama de teste com componentes conhecidos, o JSON extraído contém os componentes esperados
 - dado um PDF exportado, a rota de PDF exportado é seguida (texto extraído programaticamente)
 - dado um PDF escaneado, a rota de imagem é seguida (conversão para imagem)
 - dado um arquivo com extensão inválida, retorna erro com motivo
 
 **P2 — Análise de riscos**
+
 - dado um JSON com um único banco atendendo 5 serviços, detecta risco "banco centralizado"
 - dado um JSON com componente gateway sem réplica e muitas conexões, detecta "ponto único de falha"
 - dado um JSON sem riscos aparentes, retorna lista vazia de riscos
 - dado um JSON sem campo `components`, retorna erro
 
 **P3 — Geração do relatório**
+
 - dado um JSON enriquecido, o relatório gerado contém todas as 7 seções
 - dado um JSON com 2 riscos, o relatório menciona ambos
 - dado um JSON com `uncertainties`, o relatório inclui isso na seção de limitações
 
 **P4 — Validação**
+
 - dado um relatório completo e JSON consistente, a validação aprova
 - dado um relatório sem seção "Recomendações", a validação rejeita com motivo
 - dado um relatório que menciona componente inexistente no JSON, a validação rejeita
@@ -411,3 +459,107 @@ Para atender ao requisito de avaliação:
 4. verificar se riscos detectados fazem sentido
 5. avaliar se o relatório é coerente com os dados extraídos
 6. documentar acertos, erros e limitações encontradas
+
+---
+
+# Estrutura do projeto
+
+Separação por função, não por etapa:
+
+- `.md` = contrato/documentação
+- `pipelines/` = lógica executável por etapa
+- `orchestrator/` = encadeia e trata erros
+- `schemas/` = contrato de dados entre etapas
+- `prompts/` = prompts externos, versionáveis
+- `llm/` = cliente único para chamadas de modelo
+- `tests/` + `samples/` = requisito do hackaton (seções 12 e 13)
+
+## Estrutura
+
+```
+project/
+│
+├─ docs/
+│  └─ arquitetura.md                 # único; HACKATON - Pipelines.md é a spec por etapa
+│
+├─ prompts/
+│  ├─ extracao.md                    # P1 — prompt base
+│  ├─ extracao_reforcado.md          # P1 — retry com instrução reforçada
+│  └─ relatorio.md                   # P3
+│
+├─ schemas/
+│  ├─ canonical.json                 # saída da P1
+│  └─ enriched.json                  # saída da P2
+│
+├─ llm/
+│  ├─ client.py                      # abstração retry/timeout/parse JSON
+│  ├─ multimodal.py                  # Claude/GPT-4o (P1)
+│  └─ text.py                        # Ollama ou API (P3)
+│
+├─ pipelines/
+│  ├─ p1_extraction/
+│  │  ├─ __init__.py                 # entrypoint: extract(file) -> canonical
+│  │  ├─ classifier.py               # imagem | pdf_exportado | pdf_escaneado
+│  │  ├─ image_route.py              # imagem → multimodal
+│  │  ├─ pdf_exported_route.py       # texto + imagem → multimodal
+│  │  └─ pdf_scanned_route.py        # pdf2image → multimodal
+│  │
+│  ├─ p2_risk_analysis/
+│  │  ├─ __init__.py                 # entrypoint: analyze(canonical) -> enriched
+│  │  ├─ registry.py                 # registra e executa regras
+│  │  └─ rules/
+│  │     ├─ single_point_of_failure.py
+│  │     ├─ centralized_database.py
+│  │     ├─ missing_edge_auth.py
+│  │     ├─ unmediated_external.py
+│  │     └─ excessive_coupling.py
+│  │
+│  ├─ p3_report_generation/
+│  │  └─ __init__.py                 # entrypoint: generate(enriched) -> markdown
+│  │
+│  └─ p4_validation/
+│     ├─ __init__.py                 # entrypoint: validate(report, enriched) -> result
+│     ├─ structure.py                # seções obrigatórias
+│     └─ consistency.py              # componentes/riscos cruzados
+│
+├─ orchestrator/
+│  └─ pipeline.py                    # encadeia P1→P2→P3→P4, estado, erros
+│
+├─ config/
+│  ├─ settings.py                    # lê .env (API keys, endpoint Ollama, modelos)
+│  └─ logging.py                     # logging JSON estruturado
+│
+├─ tests/
+│  ├─ test_p1_extraction.py
+│  ├─ test_p2_risk_analysis.py
+│  ├─ test_p3_report_generation.py
+│  ├─ test_p4_validation.py
+│  └─ test_orchestrator.py           # ponta a ponta
+│
+├─ samples/                          # 3-5 diagramas de teste (seção 13)
+│  ├─ diagram_01.png
+│  ├─ diagram_02.pdf
+│  └─ ...
+│
+├─ runs/                             # saída de execuções (logs JSON, relatórios)
+│  └─ .gitkeep
+│
+├─ cli.py                            # entrypoint: python cli.py <arquivo>
+├─ .env.example
+├─ pyproject.toml                    # ou requirements.txt
+└─ README.md
+```
+
+## Princípios
+
+1. **Cada pipeline tem 1 entrypoint público** (`__init__.py` com função `run/extract/analyze/...`). Tudo mais é detalhe interno.
+2. **Pipelines não conhecem o orquestrador.** Testáveis em isolamento (requisito da seção 12).
+3. **Toda chamada a modelo passa por `llm/client.py`.** Retry, timeout e parsing em um lugar só.
+4. **Regras de risco seguem registry pattern.** Adicionar regra = criar arquivo novo em `rules/`, sem tocar o pipeline.
+5. **Prompts fora do código.** Versionáveis, comparáveis, iteráveis sem deploy.
+6. **Schemas JSON são contratos.** P2 e P4 validam contra eles antes de processar.
+7. **Documentação por função, não por etapa.** `HACKATON - Pipelines.md` já é a spec por etapa; um `arquitetura.md` mestre basta.
+
+## Ordem de implementação
+
+Segue seção 11 do Pipelines: P1 → P2 → P3 → P4. Antes de P1, criar `llm/client.py`, `schemas/` e `config/` — são dependências horizontais de todas as etapas.

@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# Ambientes virtuais
+venv/
+.venv/
+env/
+
+# Testes
+.pytest_cache/
+
+# Variáveis de ambiente (contém API keys)
+.env
+.env.*
+
+# Outputs gerados pelas runs (mantém apenas o .gitkeep)
+project/runs/*/
+
+# Windows
+Thumbs.db
+desktop.ini
+
+# IDEs
+.vscode/
+.idea/
