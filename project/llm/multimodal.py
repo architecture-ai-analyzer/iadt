@@ -2,7 +2,7 @@ import base64
 from pathlib import Path
 from typing import Any
 
-from config.settings import LLM_PROVIDER, CLAUDE_MODEL_VISION, OLLAMA_MODEL_VISION, OLLAMA_BASE_URL
+from config.settings import LLM_PROVIDER, CLAUDE_MODEL_VISION, OPENAI_MODEL_VISION, OLLAMA_MODEL_VISION, OLLAMA_BASE_URL
 from llm.client import call_with_retry, parse_json_response
 
 
@@ -10,6 +10,8 @@ def call_vision(image_path: Path, prompt: str, reinforced_prompt: str | None = N
     def _call(p: str):
         if LLM_PROVIDER == "ollama":
             return _ollama_vision(image_path, p)
+        if LLM_PROVIDER == "openai":
+            return _openai_vision(image_path, p)
         return _anthropic_vision(image_path, p)
 
     raw = call_with_retry(lambda: _call(prompt), context="vision_extraction")
@@ -28,6 +30,8 @@ def call_vision_with_text(image_path: Path, extracted_text: str, prompt: str, re
     def _call(p: str):
         if LLM_PROVIDER == "ollama":
             return _ollama_vision(image_path, p)
+        if LLM_PROVIDER == "openai":
+            return _openai_vision_with_text(image_path, extracted_text, p)
         return _anthropic_vision_with_text(image_path, extracted_text, p)
 
     raw = call_with_retry(lambda: _call(full_prompt), context="vision_text_extraction")
@@ -83,6 +87,37 @@ def _anthropic_vision_with_text(image_path: Path, extracted_text: str, prompt: s
         ]}],
     )
     return response.content[0].text
+
+
+def _openai_vision(image_path: Path, prompt: str) -> str:
+    from llm.client import get_openai_client
+    image_data = base64.standard_b64encode(image_path.read_bytes()).decode("utf-8")
+    media = _media_type(image_path)
+    response = get_openai_client().chat.completions.create(
+        model=OPENAI_MODEL_VISION,
+        temperature=0,
+        messages=[{"role": "user", "content": [
+            {"type": "image_url", "image_url": {"url": f"data:{media};base64,{image_data}"}},
+            {"type": "text", "text": prompt},
+        ]}],
+    )
+    return response.choices[0].message.content
+
+
+def _openai_vision_with_text(image_path: Path, extracted_text: str, prompt: str) -> str:
+    from llm.client import get_openai_client
+    image_data = base64.standard_b64encode(image_path.read_bytes()).decode("utf-8")
+    media = _media_type(image_path)
+    full_prompt = f"Texto extraído do PDF:\n\n{extracted_text}\n\n---\n\n{prompt}"
+    response = get_openai_client().chat.completions.create(
+        model=OPENAI_MODEL_VISION,
+        temperature=0,
+        messages=[{"role": "user", "content": [
+            {"type": "text", "text": full_prompt},
+            {"type": "image_url", "image_url": {"url": f"data:{media};base64,{image_data}"}},
+        ]}],
+    )
+    return response.choices[0].message.content
 
 
 def _media_type(path: Path) -> str:

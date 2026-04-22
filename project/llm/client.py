@@ -3,12 +3,14 @@ import time
 from typing import Any
 
 import anthropic
+import openai as openai_lib
 
 from config.logging_config import get_logger
-from config.settings import ANTHROPIC_API_KEY, LLM_MAX_RETRIES
+from config.settings import ANTHROPIC_API_KEY, OPENAI_API_KEY, LLM_MAX_RETRIES
 
 logger = get_logger(__name__)
 _client: anthropic.Anthropic | None = None
+_openai_client: openai_lib.OpenAI | None = None
 
 
 def get_client() -> anthropic.Anthropic:
@@ -16,6 +18,13 @@ def get_client() -> anthropic.Anthropic:
     if _client is None:
         _client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
     return _client
+
+
+def get_openai_client() -> openai_lib.OpenAI:
+    global _openai_client
+    if _openai_client is None:
+        _openai_client = openai_lib.OpenAI(api_key=OPENAI_API_KEY)
+    return _openai_client
 
 
 def call_with_retry(

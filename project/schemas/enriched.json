@@ -6,9 +6,38 @@
   "required": ["components", "relationships", "uncertainties", "risks"],
   "additionalProperties": false,
   "properties": {
-    "components": { "$ref": "canonical.json#/properties/components" },
-    "relationships": { "$ref": "canonical.json#/properties/relationships" },
-    "uncertainties": { "$ref": "canonical.json#/properties/uncertainties" },
+    "components": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "type"],
+        "additionalProperties": false,
+        "properties": {
+          "name": { "type": "string", "minLength": 1 },
+          "type": {
+            "type": "string",
+            "enum": ["gateway", "service", "database", "queue", "cache", "load_balancer", "external", "client", "storage", "unknown"]
+          }
+        }
+      }
+    },
+    "relationships": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["from", "to"],
+        "additionalProperties": false,
+        "properties": {
+          "from": { "type": "string", "minLength": 1 },
+          "to": { "type": "string", "minLength": 1 },
+          "label": { "type": "string" }
+        }
+      }
+    },
+    "uncertainties": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
     "risks": {
       "type": "array",
       "items": {

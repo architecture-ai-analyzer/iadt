@@ -1,0 +1,87 @@
+{
+  "components": [
+    {
+      "name": "Simulated Electric Car Data",
+      "type": "unknown"
+    },
+    {
+      "name": "AWS IoT Core",
+      "type": "service"
+    },
+    {
+      "name": "AWS IoT SiteWise",
+      "type": "service"
+    },
+    {
+      "name": "AWS IoT TwinMaker Connector to SiteWise",
+      "type": "unknown"
+    },
+    {
+      "name": "AWS IoT TwinMaker",
+      "type": "service"
+    },
+    {
+      "name": "Amazon S3",
+      "type": "storage"
+    },
+    {
+      "name": "Amazon Timestream",
+      "type": "database"
+    },
+    {
+      "name": "Amazon Managed Service for Grafana",
+      "type": "service"
+    },
+    {
+      "name": "Write Maintenance data to Timestream",
+      "type": "unknown"
+    },
+    {
+      "name": "Custom Connector to Timestream",
+      "type": "unknown"
+    }
+  ],
+  "relationships": [
+    {
+      "from": "Simulated Electric Car Data",
+      "to": "AWS IoT SiteWise"
+    },
+    {
+      "from": "AWS IoT SiteWise",
+      "to": "AWS IoT Core"
+    },
+    {
+      "from": "AWS IoT SiteWise",
+      "to": "AWS IoT TwinMaker Connector to SiteWise"
+    },
+    {
+      "from": "AWS IoT TwinMaker Connector to SiteWise",
+      "to": "AWS IoT TwinMaker"
+    },
+    {
+      "from": "AWS IoT TwinMaker",
+      "to": "Amazon S3"
+    },
+    {
+      "from": "AWS IoT TwinMaker",
+      "to": "Amazon Managed Service for Grafana"
+    },
+    {
+      "from": "AWS IoT Core",
+      "to": "Write Maintenance data to Timestream"
+    },
+    {
+      "from": "Write Maintenance data to Timestream",
+      "to": "Amazon Timestream"
+    },
+    {
+      "from": "AWS IoT TwinMaker",
+      "to": "Custom Connector to Timestream"
+    },
+    {
+      "from": "Custom Connector to Timestream",
+      "to": "Amazon Timestream"
+    }
+  ],
+  "uncertainties": []
+}

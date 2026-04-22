@@ -3,6 +3,7 @@ Name: iadt-pipeline
 Version: 0.1.0
 Requires-Python: >=3.11
 Requires-Dist: anthropic>=0.40.0
+Requires-Dist: openai>=1.0.0
 Requires-Dist: ollama>=0.4.0
 Requires-Dist: pymupdf>=1.24.0
 Requires-Dist: pdf2image>=1.17.0

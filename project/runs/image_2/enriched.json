@@ -1,0 +1,38 @@
+{
+  "components": [
+    {
+      "name": "Amazon Managed KMS key (aws/dynamodb)",
+      "type": "service"
+    },
+    {
+      "name": "sourceCmkKey-BackupVault",
+      "type": "service"
+    },
+    {
+      "name": "destinationCmkKey-BackupVault",
+      "type": "service"
+    },
+    {
+      "name": "Amazon Managed KMS key (aws/rds)",
+      "type": "service"
+    }
+  ],
+  "relationships": [
+    {
+      "from": "Amazon Managed KMS key (aws/dynamodb)",
+      "to": "sourceCmkKey-BackupVault"
+    },
+    {
+      "from": "sourceCmkKey-BackupVault",
+      "to": "destinationCmkKey-BackupVault"
+    },
+    {
+      "from": "Amazon Managed KMS key (aws/rds)",
+      "to": "sourceCmkKey-BackupVault"
+    }
+  ],
+  "uncertainties": [
+    "Ambiguidade na conexão entre sourceCmkKey-BackupVault e destinationCmkKey-BackupVault na parte inferior do diagrama."
+  ],
+  "risks": []
+}
