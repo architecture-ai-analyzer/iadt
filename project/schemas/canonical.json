@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "CanonicalJSON",
-  "description": "Saída da P1 — estrutura extraída do diagrama",
+  "description": "Saída da P1 — estrutura extraída do diagrama com semântica arquitetural",
   "type": "object",
   "required": ["components", "relationships", "uncertainties"],
   "additionalProperties": false,
@@ -16,7 +16,24 @@
           "name": { "type": "string", "minLength": 1 },
           "type": {
             "type": "string",
-            "enum": ["gateway", "service", "database", "queue", "cache", "load_balancer", "external", "client", "storage", "unknown"]
+            "enum": [
+              "gateway", "service", "function", "database", "queue",
+              "cache", "load_balancer", "external", "client", "storage",
+              "connector", "unknown"
+            ]
+          },
+          "subtype": { "type": "string" },
+          "role": { "type": "string" },
+          "provider": { "type": "string" },
+          "is_managed_service": { "type": "boolean" },
+          "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+          "evidence": {
+            "type": "object",
+            "properties": {
+              "icon_detected": { "type": "string" },
+              "label_text": { "type": "string" },
+              "visual_cue": { "type": "string" }
+            }
           }
         }
       }
@@ -30,13 +47,61 @@
         "properties": {
           "from": { "type": "string", "minLength": 1 },
           "to": { "type": "string", "minLength": 1 },
-          "label": { "type": "string" }
+          "label": { "type": "string" },
+          "relation_type": {
+            "type": "string",
+            "enum": [
+              "write", "read", "invoke", "publish", "subscribe",
+              "query", "sync", "route", "connect", "depends_on", "unknown"
+            ]
+          },
+          "direction": {
+            "type": "string",
+            "enum": ["source_to_target", "target_to_source", "bidirectional", "unknown"]
+          },
+          "direction_confidence": {
+            "type": "string",
+            "enum": ["high", "medium", "low"]
+          },
+          "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+          "evidence": {
+            "type": "object",
+            "properties": {
+              "arrow_detected": { "type": "boolean" },
+              "label_text": { "type": "string" },
+              "visual_cue": { "type": "string" }
+            }
+          }
         }
       }
     },
     "uncertainties": {
       "type": "array",
-      "items": { "type": "string" }
+      "items": {
+        "type": "object",
+        "required": ["kind", "target", "note"],
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "component_classification",
+              "relationship_direction",
+              "relationship_type",
+              "missing_label",
+              "ambiguous_icon",
+              "other"
+            ]
+          },
+          "target": {
+            "oneOf": [
+              { "type": "string" },
+              { "type": "array", "items": { "type": "string" } }
+            ]
+          },
+          "note": { "type": "string", "minLength": 1 }
+        }
+      }
     }
   }
 }

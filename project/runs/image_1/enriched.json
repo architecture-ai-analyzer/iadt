@@ -1,88 +1,433 @@
 {
   "components": [
     {
-      "name": "Simulated Electric Car Data",
-      "type": "unknown"
-    },
-    {
-      "name": "AWS IoT Core",
-      "type": "service"
-    },
-    {
-      "name": "AWS IoT SiteWise",
-      "type": "service"
-    },
-    {
-      "name": "AWS IoT TwinMaker Connector to SiteWise",
-      "type": "unknown"
-    },
-    {
-      "name": "AWS IoT TwinMaker",
-      "type": "service"
-    },
-    {
-      "name": "Amazon S3",
-      "type": "storage"
+      "name": "Write Maintenance data to Timestream",
+      "type": "function",
+      "subtype": "aws_lambda",
+      "role": "writer",
+      "provider": "aws",
+      "is_managed_service": true,
+      "confidence": 0.9,
+      "evidence": {
+        "icon_detected": "aws_lambda_orange_icon",
+        "label_text": "Write Maintenance data to Timestream"
+      }
     },
     {
       "name": "Amazon Timestream",
-      "type": "database"
-    },
-    {
-      "name": "Amazon Managed Service for Grafana",
-      "type": "service"
-    },
-    {
-      "name": "Write Maintenance data to Timestream",
-      "type": "unknown"
+      "type": "database",
+      "subtype": "aws_timestream",
+      "provider": "aws",
+      "is_managed_service": true,
+      "confidence": 0.9,
+      "evidence": {
+        "icon_detected": "database_cylinder",
+        "label_text": "Amazon Timestream"
+      }
     },
     {
       "name": "Custom Connector to Timestream",
-      "type": "unknown"
+      "type": "connector",
+      "role": "connector",
+      "confidence": 0.8,
+      "evidence": {
+        "label_text": "Custom Connector to Timestream"
+      }
+    },
+    {
+      "name": "AWS IoT Core",
+      "type": "service",
+      "subtype": "aws_iot_core",
+      "provider": "aws",
+      "is_managed_service": true,
+      "confidence": 0.9,
+      "evidence": {
+        "icon_detected": "aws_iot_core_icon",
+        "label_text": "AWS IoT Core"
+      }
+    },
+    {
+      "name": "AWS IoT SiteWise",
+      "type": "service",
+      "subtype": "aws_iot_sitewise",
+      "provider": "aws",
+      "is_managed_service": true,
+      "confidence": 0.9,
+      "evidence": {
+        "icon_detected": "aws_iot_sitewise_icon",
+        "label_text": "AWS IoT SiteWise"
+      }
+    },
+    {
+      "name": "AWS IoT TwinMaker Connector to SiteWise",
+      "type": "connector",
+      "role": "connector",
+      "provider": "aws",
+      "is_managed_service": true,
+      "confidence": 0.8,
+      "evidence": {
+        "label_text": "AWS IoT TwinMaker Connector to SiteWise"
+      }
+    },
+    {
+      "name": "AWS IoT TwinMaker",
+      "type": "service",
+      "subtype": "aws_iot_twinmaker",
+      "provider": "aws",
+      "is_managed_service": true,
+      "confidence": 0.9,
+      "evidence": {
+        "icon_detected": "aws_iot_twinmaker_icon",
+        "label_text": "AWS IoT TwinMaker"
+      }
+    },
+    {
+      "name": "Amazon Managed Service for Grafana",
+      "type": "service",
+      "subtype": "aws_grafana",
+      "provider": "aws",
+      "is_managed_service": true,
+      "confidence": 0.9,
+      "evidence": {
+        "icon_detected": "aws_grafana_icon",
+        "label_text": "Amazon Managed Service for Grafana"
+      }
+    },
+    {
+      "name": "Simulated Electric Car Data",
+      "type": "external",
+      "role": "simulator",
+      "confidence": 0.8,
+      "evidence": {
+        "label_text": "Simulated Electric Car Data"
+      }
+    },
+    {
+      "name": "Amazon S3",
+      "type": "storage",
+      "subtype": "aws_s3",
+      "provider": "aws",
+      "is_managed_service": true,
+      "confidence": 0.9,
+      "evidence": {
+        "icon_detected": "aws_s3_icon",
+        "label_text": "Amazon S3"
+      }
     }
   ],
   "relationships": [
     {
-      "from": "Simulated Electric Car Data",
-      "to": "AWS IoT SiteWise"
-    },
-    {
-      "from": "AWS IoT SiteWise",
-      "to": "AWS IoT Core"
-    },
-    {
-      "from": "AWS IoT SiteWise",
-      "to": "AWS IoT TwinMaker Connector to SiteWise"
-    },
-    {
-      "from": "AWS IoT TwinMaker Connector to SiteWise",
-      "to": "AWS IoT TwinMaker"
-    },
-    {
-      "from": "AWS IoT TwinMaker",
-      "to": "Amazon S3"
-    },
-    {
-      "from": "AWS IoT TwinMaker",
-      "to": "Amazon Managed Service for Grafana"
-    },
-    {
-      "from": "AWS IoT Core",
-      "to": "Write Maintenance data to Timestream"
-    },
-    {
       "from": "Write Maintenance data to Timestream",
-      "to": "Amazon Timestream"
-    },
-    {
-      "from": "AWS IoT TwinMaker",
-      "to": "Custom Connector to Timestream"
+      "to": "Amazon Timestream",
+      "relation_type": "write",
+      "direction": "source_to_target",
+      "direction_confidence": "high",
+      "confidence": 0.9,
+      "evidence": {
+        "arrow_detected": true
+      }
     },
     {
       "from": "Custom Connector to Timestream",
-      "to": "Amazon Timestream"
+      "to": "Amazon Timestream",
+      "relation_type": "connect",
+      "direction": "source_to_target",
+      "direction_confidence": "high",
+      "confidence": 0.8,
+      "evidence": {
+        "arrow_detected": true
+      }
+    },
+    {
+      "from": "Simulated Electric Car Data",
+      "to": "AWS IoT SiteWise",
+      "relation_type": "connect",
+      "direction": "source_to_target",
+      "direction_confidence": "high",
+      "confidence": 0.8,
+      "evidence": {
+        "arrow_detected": true
+      }
+    },
+    {
+      "from": "AWS IoT Core",
+      "to": "AWS IoT SiteWise",
+      "relation_type": "connect",
+      "direction": "source_to_target",
+      "direction_confidence": "high",
+      "confidence": 0.8,
+      "evidence": {
+        "arrow_detected": true
+      }
+    },
+    {
+      "from": "AWS IoT SiteWise",
+      "to": "AWS IoT TwinMaker Connector to SiteWise",
+      "relation_type": "connect",
+      "direction": "source_to_target",
+      "direction_confidence": "high",
+      "confidence": 0.8,
+      "evidence": {
+        "arrow_detected": true
+      }
+    },
+    {
+      "from": "AWS IoT TwinMaker Connector to SiteWise",
+      "to": "AWS IoT TwinMaker",
+      "relation_type": "connect",
+      "direction": "source_to_target",
+      "direction_confidence": "high",
+      "confidence": 0.8,
+      "evidence": {
+        "arrow_detected": true
+      }
+    },
+    {
+      "from": "AWS IoT TwinMaker",
+      "to": "Amazon Managed Service for Grafana",
+      "relation_type": "connect",
+      "direction": "source_to_target",
+      "direction_confidence": "high",
+      "confidence": 0.8,
+      "evidence": {
+        "arrow_detected": true
+      }
+    },
+    {
+      "from": "AWS IoT TwinMaker",
+      "to": "Amazon S3",
+      "relation_type": "connect",
+      "direction": "source_to_target",
+      "direction_confidence": "high",
+      "confidence": 0.8,
+      "evidence": {
+        "arrow_detected": true
+      }
     }
   ],
-  "uncertainties": [],
-  "risks": []
+  "uncertainties": [
+    {
+      "kind": "ambiguous_icon",
+      "target": "Custom Connector to Timestream",
+      "note": "Icon not clearly identifiable as a specific AWS service."
+    }
+  ],
+  "observations": [
+    {
+      "statement": "Existem 3 componentes do tipo service com subtype aws_iot_core, aws_iot_sitewise e aws_iot_twinmaker.",
+      "basis": {
+        "kind": "structural",
+        "detail": "3 componentes do tipo service identificados."
+      },
+      "refs": [],
+      "id": "O1"
+    },
+    {
+      "statement": "O componente 'Write Maintenance data to Timestream' é do tipo function com subtype aws_lambda e role writer.",
+      "basis": {
+        "kind": "structural",
+        "detail": "Componente identificado como function com subtype aws_lambda e role writer."
+      },
+      "refs": [
+        "Write Maintenance data to Timestream"
+      ],
+      "id": "O2"
+    },
+    {
+      "statement": "A relação entre 'Write Maintenance data to Timestream' e 'Amazon Timestream' é do tipo write com confidence 0.9.",
+      "basis": {
+        "kind": "structural",
+        "detail": "Relação identificada com relation_type write e confidence 0.9."
+      },
+      "refs": [
+        "Write Maintenance data to Timestream",
+        "Amazon Timestream"
+      ],
+      "id": "O3"
+    },
+    {
+      "statement": "O componente 'Amazon Timestream' é do tipo database com subtype aws_timestream.",
+      "basis": {
+        "kind": "structural",
+        "detail": "Componente identificado como database com subtype aws_timestream."
+      },
+      "refs": [
+        "Amazon Timestream"
+      ],
+      "id": "O4"
+    },
+    {
+      "statement": "O campo uncertainties contém 1 entrada de kind ambiguous_icon.",
+      "basis": {
+        "kind": "structural",
+        "detail": "1 entrada de uncertainties identificada com kind ambiguous_icon."
+      },
+      "refs": [],
+      "id": "O5"
+    },
+    {
+      "statement": "O componente 'Amazon S3' é do tipo storage com subtype aws_s3 e is_managed_service true.",
+      "basis": {
+        "kind": "structural",
+        "detail": "Componente identificado como storage com subtype aws_s3 e is_managed_service true."
+      },
+      "refs": [
+        "Amazon S3"
+      ],
+      "id": "O6"
+    },
+    {
+      "statement": "A relação entre 'AWS IoT TwinMaker' e 'Amazon Managed Service for Grafana' é do tipo connect com confidence 0.8.",
+      "basis": {
+        "kind": "structural",
+        "detail": "Relação identificada com relation_type connect e confidence 0.8."
+      },
+      "refs": [
+        "AWS IoT TwinMaker",
+        "Amazon Managed Service for Grafana"
+      ],
+      "id": "O7"
+    },
+    {
+      "statement": "O componente 'Simulated Electric Car Data' é do tipo external com role simulator.",
+      "basis": {
+        "kind": "structural",
+        "detail": "Componente identificado como external com role simulator."
+      },
+      "refs": [
+        "Simulated Electric Car Data"
+      ],
+      "id": "O8"
+    },
+    {
+      "statement": "Existem 2 componentes do tipo connector com role connector.",
+      "basis": {
+        "kind": "structural",
+        "detail": "2 componentes do tipo connector identificados."
+      },
+      "refs": [],
+      "id": "O9"
+    },
+    {
+      "statement": "O componente 'AWS IoT SiteWise' é do tipo service com subtype aws_iot_sitewise e is_managed_service true.",
+      "basis": {
+        "kind": "structural",
+        "detail": "Componente identificado como service com subtype aws_iot_sitewise e is_managed_service true."
+      },
+      "refs": [
+        "AWS IoT SiteWise"
+      ],
+      "id": "O10"
+    },
+    {
+      "statement": "A relação entre 'AWS IoT SiteWise' e 'AWS IoT TwinMaker Connector to SiteWise' é do tipo connect com confidence 0.8.",
+      "basis": {
+        "kind": "structural",
+        "detail": "Relação identificada com relation_type connect e confidence 0.8."
+      },
+      "refs": [
+        "AWS IoT SiteWise",
+        "AWS IoT TwinMaker Connector to SiteWise"
+      ],
+      "id": "O11"
+    }
+  ],
+  "intent": {
+    "kind": "flow",
+    "summary": "O diagrama comunica o fluxo de dados desde a simulação de dados de um carro elétrico até o armazenamento e visualização em serviços AWS.",
+    "compared_items": null
+  },
+  "pattern": {
+    "type": "iot_pipeline",
+    "description": "O diagrama representa um fluxo de dados de dispositivos IoT para armazenamento e visualização, utilizando serviços como AWS IoT Core e Amazon Timestream.",
+    "confidence": 0.9,
+    "key_indicators": [
+      "AWS IoT Core",
+      "Amazon Timestream",
+      "AWS IoT SiteWise"
+    ]
+  },
+  "inferences": [
+    {
+      "id": "I1",
+      "hypothesis": "A relação entre 'AWS IoT Core' e 'AWS IoT SiteWise' sugere que o fluxo de dados é centralizado em 'AWS IoT SiteWise', o que pode indicar um ponto único de falha (SPOF) [inferência estrutural: O1, O10].",
+      "cites": [
+        "O1",
+        "O10"
+      ],
+      "confidence": "high"
+    },
+    {
+      "id": "I2",
+      "hypothesis": "A presença de múltiplos conectores ('Custom Connector to Timestream' e 'AWS IoT TwinMaker Connector to SiteWise') sugere uma possível duplicação de lógica de integração, o que pode levar a inconsistências nos dados [inferência estrutural: O9].",
+      "cites": [
+        "O9"
+      ],
+      "confidence": "medium"
+    },
+    {
+      "id": "I3",
+      "hypothesis": "A relação de 'Write Maintenance data to Timestream' para 'Amazon Timestream' com alta confiança indica que a escrita de dados é um fluxo crítico, mas não há redundância visível para essa operação [fato visual: O3].",
+      "cites": [
+        "O3"
+      ],
+      "confidence": "high"
+    }
+  ],
+  "concerns": [
+    {
+      "id": "C1",
+      "title": "Ponto Único de Falha em Fluxo de Dados",
+      "description": "Observei que 'AWS IoT Core' se conecta diretamente a 'AWS IoT SiteWise' [O1], inferi que isso pode criar um SPOF [I1], portanto há risco de falha total no fluxo de dados se 'AWS IoT SiteWise' falhar.",
+      "derived_from": [
+        "I1"
+      ],
+      "affected_components": [
+        "AWS IoT Core",
+        "AWS IoT SiteWise"
+      ],
+      "severity": "high",
+      "category": "availability"
+    },
+    {
+      "id": "C2",
+      "title": "Possível Inconsistência de Dados",
+      "description": "Observei que existem dois conectores customizados [O9], inferi que isso pode levar a duplicação de lógica de integração [I2], portanto há risco de inconsistência nos dados entre 'Timestream' e 'SiteWise'.",
+      "derived_from": [
+        "I2"
+      ],
+      "affected_components": [
+        "Custom Connector to Timestream",
+        "AWS IoT TwinMaker Connector to SiteWise"
+      ],
+      "severity": "medium",
+      "category": "data"
+    },
+    {
+      "id": "C3",
+      "title": "Falta de Redundância na Escrita de Dados",
+      "description": "Observei que a relação entre 'Write Maintenance data to Timestream' e 'Amazon Timestream' é de escrita com alta confiança [O3], inferi que a ausência de um componente redundante para essa operação pode resultar em perda de dados [I3], portanto há risco de falha total na escrita de dados.",
+      "derived_from": [
+        "I3"
+      ],
+      "affected_components": [
+        "Write Maintenance data to Timestream",
+        "Amazon Timestream"
+      ],
+      "severity": "high",
+      "category": "availability"
+    }
+  ],
+  "limitations": [
+    {
+      "id": "L1",
+      "statement": "Não é possível confirmar se há autenticação ou criptografia nas conexões entre os componentes, pois não há labels visíveis que indiquem esses controles.",
+      "reason": "missing_label"
+    },
+    {
+      "id": "L2",
+      "statement": "O diagrama não mostra SLAs, replication ou failover — análise de disponibilidade fica limitada ao que é estruturalmente visível.",
+      "reason": "out_of_scope"
+    }
+  ]
 }

@@ -1,9 +1,9 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "EnrichedJSON",
-  "description": "Saída da P2 — JSON canônico + riscos identificados",
+  "description": "Saída do P2 — canonical + semântica + inferences + concerns + limitations",
   "type": "object",
-  "required": ["components", "relationships", "uncertainties", "risks"],
+  "required": ["components", "relationships", "uncertainties", "observations", "intent", "pattern", "inferences", "concerns", "limitations"],
   "additionalProperties": false,
   "properties": {
     "components": {
@@ -16,7 +16,24 @@
           "name": { "type": "string", "minLength": 1 },
           "type": {
             "type": "string",
-            "enum": ["gateway", "service", "database", "queue", "cache", "load_balancer", "external", "client", "storage", "unknown"]
+            "enum": [
+              "gateway", "service", "function", "database", "queue",
+              "cache", "load_balancer", "external", "client", "storage",
+              "connector", "unknown"
+            ]
+          },
+          "subtype": { "type": "string" },
+          "role": { "type": "string" },
+          "provider": { "type": "string" },
+          "is_managed_service": { "type": "boolean" },
+          "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+          "evidence": {
+            "type": "object",
+            "properties": {
+              "icon_detected": { "type": "string" },
+              "label_text": { "type": "string" },
+              "visual_cue": { "type": "string" }
+            }
           }
         }
       }
@@ -30,39 +47,186 @@
         "properties": {
           "from": { "type": "string", "minLength": 1 },
           "to": { "type": "string", "minLength": 1 },
-          "label": { "type": "string" }
+          "label": { "type": "string" },
+          "relation_type": {
+            "type": "string",
+            "enum": [
+              "write", "read", "invoke", "publish", "subscribe",
+              "query", "sync", "route", "connect", "depends_on", "unknown"
+            ]
+          },
+          "direction": {
+            "type": "string",
+            "enum": ["source_to_target", "target_to_source", "bidirectional", "unknown"]
+          },
+          "direction_confidence": {
+            "type": "string",
+            "enum": ["high", "medium", "low"]
+          },
+          "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+          "evidence": {
+            "type": "object",
+            "properties": {
+              "arrow_detected": { "type": "boolean" },
+              "label_text": { "type": "string" },
+              "visual_cue": { "type": "string" }
+            }
+          }
         }
       }
     },
     "uncertainties": {
       "type": "array",
-      "items": { "type": "string" }
+      "items": {
+        "type": "object",
+        "required": ["kind", "target", "note"],
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "component_classification",
+              "relationship_direction",
+              "relationship_type",
+              "missing_label",
+              "ambiguous_icon",
+              "other"
+            ]
+          },
+          "target": {
+            "oneOf": [
+              { "type": "string" },
+              { "type": "array", "items": { "type": "string" } }
+            ]
+          },
+          "note": { "type": "string", "minLength": 1 }
+        }
+      }
     },
-    "risks": {
+    "observations": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "statement", "basis"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string", "pattern": "^O[0-9]+$" },
+          "statement": { "type": "string", "minLength": 1 },
+          "basis": {
+            "type": "object",
+            "required": ["kind", "detail"],
+            "additionalProperties": false,
+            "properties": {
+              "kind": { "type": "string", "enum": ["visual", "textual", "structural"] },
+              "detail": { "type": "string", "minLength": 1 }
+            }
+          },
+          "refs": {
+            "type": "array",
+            "items": { "type": "string" }
+          }
+        }
+      }
+    },
+    "intent": {
+      "type": "object",
+      "required": ["kind", "summary"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": ["flow", "comparison", "topology", "security", "integration", "data", "mixed"]
+        },
+        "summary": { "type": "string", "minLength": 1 },
+        "compared_items": {
+          "oneOf": [
+            { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+            { "type": "null" }
+          ]
+        }
+      }
+    },
+    "pattern": {
+      "type": "object",
+      "required": ["type", "confidence"],
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "iot_pipeline", "data_warehouse", "event_driven", "microservices",
+            "backup_dr", "security_comparison", "rule_comparison", "etl_pipeline",
+            "ml_pipeline", "api_gateway", "hybrid_cloud", "serverless", "other"
+          ]
+        },
+        "description": { "type": "string" },
+        "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+        "key_indicators": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "inferences": {
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["type", "description", "affected_components", "severity", "evidence"],
+        "required": ["id", "hypothesis", "cites", "confidence"],
         "additionalProperties": false,
         "properties": {
-          "type": {
-            "type": "string",
-            "enum": [
-              "single_point_of_failure",
-              "centralized_database",
-              "missing_edge_auth",
-              "unmediated_external",
-              "excessive_coupling"
-            ]
+          "id": { "type": "string", "pattern": "^I[0-9]+$" },
+          "hypothesis": { "type": "string", "minLength": 1 },
+          "cites": {
+            "type": "array",
+            "items": { "type": "string", "pattern": "^O[0-9]+$" },
+            "minItems": 1
           },
+          "confidence": { "type": "string", "enum": ["low", "medium", "high"] }
+        }
+      }
+    },
+    "concerns": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "title", "description", "derived_from", "affected_components", "severity", "category"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string", "pattern": "^C[0-9]+$" },
+          "title": { "type": "string", "minLength": 1 },
           "description": { "type": "string", "minLength": 1 },
+          "derived_from": {
+            "type": "array",
+            "items": { "type": "string", "pattern": "^I[0-9]+$" },
+            "minItems": 1
+          },
           "affected_components": {
             "type": "array",
             "items": { "type": "string" },
             "minItems": 1
           },
           "severity": { "type": "string", "enum": ["low", "medium", "high"] },
-          "evidence": { "type": "string", "minLength": 1 }
+          "category": {
+            "type": "string",
+            "enum": ["availability", "security", "scalability", "coupling", "data", "operational", "other"]
+          }
+        }
+      }
+    },
+    "limitations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "statement", "reason"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string", "pattern": "^L[0-9]+$" },
+          "statement": { "type": "string", "minLength": 1 },
+          "reason": {
+            "type": "string",
+            "enum": ["ambiguous_diagram", "missing_label", "out_of_scope", "low_confidence"]
+          }
         }
       }
     }

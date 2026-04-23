@@ -22,7 +22,47 @@ REQUIRED_SECTIONS = [
 
 
 def generate(enriched: dict[str, Any]) -> str:
-    prompt = _PROMPT_TEMPLATE.replace("{enriched_json}", json.dumps(enriched, ensure_ascii=False, indent=2))
+    intent = enriched.get("intent", {})
+    pattern = enriched.get("pattern", {})
+    canonical = {
+        "components": enriched.get("components", []),
+        "relationships": enriched.get("relationships", []),
+        "uncertainties": enriched.get("uncertainties", []),
+    }
+    observations = enriched.get("observations", [])
+    inferences = enriched.get("inferences", [])
+    concerns = enriched.get("concerns", [])
+    limitations = enriched.get("limitations", [])
+
+    observations_text = "\n".join(
+        f"- [{obs['id']}] {obs['statement']}" for obs in observations
+    )
+    inferences_text = "\n".join(
+        f"- [{inf['id']}] {inf['hypothesis']} (confiança: {inf['confidence']}, cita: {', '.join(inf['cites'])})"
+        for inf in inferences
+    )
+    concerns_text = "\n".join(
+        f"- [{c['id']}] {c['title']} | severidade: {c['severity']} | categoria: {c['category']} | deriva de: {', '.join(c['derived_from'])}\n"
+        f"  {c['description']}\n"
+        f"  Componentes: {', '.join(c['affected_components'])}"
+        for c in concerns
+    )
+    limitations_text = "\n".join(
+        f"- [{lim['id']}] {lim['statement']} (razão: {lim['reason']})" for lim in limitations
+    )
+
+    prompt = (
+        _PROMPT_TEMPLATE
+        .replace("{pattern_type}", pattern.get("type", "other"))
+        .replace("{pattern_description}", pattern.get("description", ""))
+        .replace("{intent_summary}", intent.get("summary", "não identificada"))
+        .replace("{intent_kind}", intent.get("kind", "mixed"))
+        .replace("{canonical_json}", json.dumps(canonical, ensure_ascii=False, indent=2))
+        .replace("{observations_json}", observations_text or "(nenhuma observação registrada)")
+        .replace("{inferences_json}", inferences_text or "(nenhuma inference gerada)")
+        .replace("{concerns_json}", concerns_text or "(nenhum concern identificado)")
+        .replace("{limitations_json}", limitations_text or "(nenhuma limitation registrada)")
+    )
 
     t0 = time.perf_counter()
     report = _call_with_section_retry(prompt)

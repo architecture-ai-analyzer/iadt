@@ -37,9 +37,12 @@ def extract(file_path: str | Path) -> dict[str, Any]:
         raise ValueError(f"JSON extraído não passa no schema: {exc.message}") from exc
 
     elapsed = round(time.perf_counter() - t0, 2)
+    components = result.get("components", [])
+    unknown_count = sum(1 for c in components if c.get("type") == "unknown")
     logger.info("p1_done", extra={"extra": {
         "file_type": file_type,
-        "components": len(result.get("components", [])),
+        "components": len(components),
+        "unknown_components": unknown_count,
         "relationships": len(result.get("relationships", [])),
         "uncertainties": len(result.get("uncertainties", [])),
         "elapsed_s": elapsed,

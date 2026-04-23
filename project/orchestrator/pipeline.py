@@ -6,6 +6,7 @@ from typing import Any
 
 from config.logging_config import get_logger
 from pipelines.p1_extraction import extract
+from pipelines.p1_2_semantic_enrichment import enrich
 from pipelines.p2_risk_analysis import analyze
 from pipelines.p3_report_generation import generate
 from pipelines.p4_validation import validate, ValidationResult
@@ -16,6 +17,7 @@ logger = get_logger(__name__)
 @dataclass
 class PipelineResult:
     canonical: dict[str, Any]
+    semantic: dict[str, Any]
     enriched: dict[str, Any]
     report: str
     validation: ValidationResult
@@ -38,7 +40,10 @@ def run(file_path: str | Path, output_dir: str | Path | None = None) -> Pipeline
     canonical = extract(path)
     _save(out_dir / "canonical.json", json.dumps(canonical, ensure_ascii=False, indent=2))
 
-    enriched = analyze(canonical)
+    semantic = enrich(canonical)
+    _save(out_dir / "semantic.json", json.dumps(semantic, ensure_ascii=False, indent=2))
+
+    enriched = analyze(canonical, semantic)
     _save(out_dir / "enriched.json", json.dumps(enriched, ensure_ascii=False, indent=2))
 
     report = generate(enriched)
@@ -56,12 +61,14 @@ def run(file_path: str | Path, output_dir: str | Path | None = None) -> Pipeline
 
     return PipelineResult(
         canonical=canonical,
+        semantic=semantic,
         enriched=enriched,
         report=report,
         validation=validation,
         elapsed_s=elapsed,
         artifacts={
             "canonical": out_dir / "canonical.json",
+            "semantic": out_dir / "semantic.json",
             "enriched": out_dir / "enriched.json",
             "report": report_path,
         },

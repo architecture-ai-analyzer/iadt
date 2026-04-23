@@ -2,37 +2,336 @@
   "components": [
     {
       "name": "Amazon Managed KMS key (aws/dynamodb)",
-      "type": "service"
+      "type": "service",
+      "subtype": "aws_kms",
+      "provider": "aws",
+      "is_managed_service": true,
+      "confidence": 0.9,
+      "evidence": {
+        "label_text": "Amazon Managed KMS key (aws/dynamodb)"
+      }
     },
     {
       "name": "sourceCmkKey-BackupVault",
-      "type": "service"
+      "type": "service",
+      "subtype": "aws_kms",
+      "provider": "aws",
+      "confidence": 0.8,
+      "evidence": {
+        "label_text": "sourceCmkKey-BackupVault"
+      }
     },
     {
       "name": "destinationCmkKey-BackupVault",
-      "type": "service"
+      "type": "service",
+      "subtype": "aws_kms",
+      "provider": "aws",
+      "confidence": 0.8,
+      "evidence": {
+        "label_text": "destinationCmkKey-BackupVault"
+      }
     },
     {
       "name": "Amazon Managed KMS key (aws/rds)",
-      "type": "service"
+      "type": "service",
+      "subtype": "aws_kms",
+      "provider": "aws",
+      "is_managed_service": true,
+      "confidence": 0.9,
+      "evidence": {
+        "label_text": "Amazon Managed KMS key (aws/rds)"
+      }
     }
   ],
   "relationships": [
     {
       "from": "Amazon Managed KMS key (aws/dynamodb)",
-      "to": "sourceCmkKey-BackupVault"
+      "to": "sourceCmkKey-BackupVault",
+      "relation_type": "connect",
+      "direction": "source_to_target",
+      "direction_confidence": "high",
+      "confidence": 0.85,
+      "evidence": {
+        "arrow_detected": true
+      }
     },
     {
       "from": "sourceCmkKey-BackupVault",
-      "to": "destinationCmkKey-BackupVault"
+      "to": "destinationCmkKey-BackupVault",
+      "relation_type": "connect",
+      "direction": "source_to_target",
+      "direction_confidence": "high",
+      "confidence": 0.85,
+      "evidence": {
+        "arrow_detected": true,
+        "visual_cue": "✓"
+      }
     },
     {
       "from": "Amazon Managed KMS key (aws/rds)",
-      "to": "sourceCmkKey-BackupVault"
+      "to": "sourceCmkKey-BackupVault",
+      "relation_type": "connect",
+      "direction": "source_to_target",
+      "direction_confidence": "high",
+      "confidence": 0.85,
+      "evidence": {
+        "arrow_detected": true
+      }
+    },
+    {
+      "from": "sourceCmkKey-BackupVault",
+      "to": "destinationCmkKey-BackupVault",
+      "relation_type": "connect",
+      "direction": "source_to_target",
+      "direction_confidence": "high",
+      "confidence": 0.85,
+      "evidence": {
+        "arrow_detected": true,
+        "visual_cue": "✗"
+      }
     }
   ],
   "uncertainties": [
-    "Ambiguidade na conexão entre sourceCmkKey-BackupVault e destinationCmkKey-BackupVault na parte inferior do diagrama."
+    {
+      "kind": "component_classification",
+      "target": "sourceCmkKey-BackupVault",
+      "note": "Ambiguous role due to lack of specific icon or label"
+    },
+    {
+      "kind": "component_classification",
+      "target": "destinationCmkKey-BackupVault",
+      "note": "Ambiguous role due to lack of specific icon or label"
+    }
   ],
-  "risks": []
+  "observations": [
+    {
+      "statement": "O componente 'Amazon Managed KMS key (aws/dynamodb)' é do tipo service com subtype aws_kms e confidence 0.9.",
+      "basis": {
+        "kind": "structural",
+        "detail": "Componentes com nome 'Amazon Managed KMS key (aws/dynamodb)' possuem tipo, subtype e confidence."
+      },
+      "refs": [
+        "Amazon Managed KMS key (aws/dynamodb)"
+      ],
+      "id": "O1"
+    },
+    {
+      "statement": "O componente 'sourceCmkKey-BackupVault' é do tipo service com subtype aws_kms e confidence 0.8.",
+      "basis": {
+        "kind": "structural",
+        "detail": "Componentes com nome 'sourceCmkKey-BackupVault' possuem tipo, subtype e confidence."
+      },
+      "refs": [
+        "sourceCmkKey-BackupVault"
+      ],
+      "id": "O2"
+    },
+    {
+      "statement": "O componente 'destinationCmkKey-BackupVault' é do tipo service com subtype aws_kms e confidence 0.8.",
+      "basis": {
+        "kind": "structural",
+        "detail": "Componentes com nome 'destinationCmkKey-BackupVault' possuem tipo, subtype e confidence."
+      },
+      "refs": [
+        "destinationCmkKey-BackupVault"
+      ],
+      "id": "O3"
+    },
+    {
+      "statement": "O componente 'Amazon Managed KMS key (aws/rds)' é do tipo service com subtype aws_kms e confidence 0.9.",
+      "basis": {
+        "kind": "structural",
+        "detail": "Componentes com nome 'Amazon Managed KMS key (aws/rds)' possuem tipo, subtype e confidence."
+      },
+      "refs": [
+        "Amazon Managed KMS key (aws/rds)"
+      ],
+      "id": "O4"
+    },
+    {
+      "statement": "Existem 4 componentes do tipo service com subtype aws_kms.",
+      "basis": {
+        "kind": "structural",
+        "detail": "Contagem de componentes do tipo service com subtype aws_kms."
+      },
+      "refs": [],
+      "id": "O5"
+    },
+    {
+      "statement": "A relação entre 'Amazon Managed KMS key (aws/dynamodb)' e 'sourceCmkKey-BackupVault' é do tipo connect com direction source_to_target e confidence 0.85.",
+      "basis": {
+        "kind": "structural",
+        "detail": "Relação com 'from', 'to', 'relation_type', 'direction' e 'confidence'."
+      },
+      "refs": [
+        "Amazon Managed KMS key (aws/dynamodb)",
+        "sourceCmkKey-BackupVault"
+      ],
+      "id": "O6"
+    },
+    {
+      "statement": "A relação entre 'sourceCmkKey-BackupVault' e 'destinationCmkKey-BackupVault' é do tipo connect com direction source_to_target e confidence 0.85.",
+      "basis": {
+        "kind": "structural",
+        "detail": "Relação com 'from', 'to', 'relation_type', 'direction' e 'confidence'."
+      },
+      "refs": [
+        "sourceCmkKey-BackupVault",
+        "destinationCmkKey-BackupVault"
+      ],
+      "id": "O7"
+    },
+    {
+      "statement": "A relação entre 'Amazon Managed KMS key (aws/rds)' e 'sourceCmkKey-BackupVault' é do tipo connect com direction source_to_target e confidence 0.85.",
+      "basis": {
+        "kind": "structural",
+        "detail": "Relação com 'from', 'to', 'relation_type', 'direction' e 'confidence'."
+      },
+      "refs": [
+        "Amazon Managed KMS key (aws/rds)",
+        "sourceCmkKey-BackupVault"
+      ],
+      "id": "O8"
+    },
+    {
+      "statement": "A relação entre 'sourceCmkKey-BackupVault' e 'destinationCmkKey-BackupVault' é do tipo connect com direction source_to_target e confidence 0.85, mas possui um visual cue de ✗.",
+      "basis": {
+        "kind": "structural",
+        "detail": "Relação com 'from', 'to', 'relation_type', 'direction', 'confidence' e 'visual_cue'."
+      },
+      "refs": [
+        "sourceCmkKey-BackupVault",
+        "destinationCmkKey-BackupVault"
+      ],
+      "id": "O9"
+    },
+    {
+      "statement": "O campo uncertainties contém 2 entradas de kind component_classification.",
+      "basis": {
+        "kind": "structural",
+        "detail": "Contagem de entradas no campo uncertainties."
+      },
+      "refs": [],
+      "id": "O10"
+    },
+    {
+      "statement": "Todos os componentes têm provider aws.",
+      "basis": {
+        "kind": "structural",
+        "detail": "Verificação do campo provider em todos os componentes."
+      },
+      "refs": [],
+      "id": "O11"
+    },
+    {
+      "statement": "Os componentes 'sourceCmkKey-BackupVault' e 'destinationCmkKey-BackupVault' têm uma classificação ambígua devido à falta de ícone ou rótulo específico.",
+      "basis": {
+        "kind": "structural",
+        "detail": "Notas no campo uncertainties para os componentes mencionados."
+      },
+      "refs": [
+        "sourceCmkKey-BackupVault",
+        "destinationCmkKey-BackupVault"
+      ],
+      "id": "O12"
+    }
+  ],
+  "intent": {
+    "kind": "topology",
+    "summary": "O diagrama ilustra a estrutura de componentes de gerenciamento de chaves e vaults para backup e recuperação de dados.",
+    "compared_items": null
+  },
+  "pattern": {
+    "type": "backup_dr",
+    "description": "O diagrama representa um fluxo de backup e recuperação, utilizando chaves de gerenciamento de segurança para proteger dados em um vault.",
+    "confidence": 0.85,
+    "key_indicators": [
+      "sourceCmkKey-BackupVault",
+      "destinationCmkKey-BackupVault"
+    ]
+  },
+  "inferences": [
+    {
+      "id": "I1",
+      "hypothesis": "A relação entre 'sourceCmkKey-BackupVault' e 'destinationCmkKey-BackupVault' possui um visual cue de ✗, indicando uma possível falha na conexão ou na funcionalidade esperada entre esses componentes [fato visual: O9], sugerindo que a comunicação ou a transferência de dados entre eles pode não ser suportada.",
+      "cites": [
+        "O9"
+      ],
+      "confidence": "high"
+    },
+    {
+      "id": "I2",
+      "hypothesis": "A ambiguidade na classificação dos componentes 'sourceCmkKey-BackupVault' e 'destinationCmkKey-BackupVault' [fato: O12] sugere que a função exata desses componentes não está clara, o que pode levar a confusões na implementação e no gerenciamento de chaves.",
+      "cites": [
+        "O12"
+      ],
+      "confidence": "high"
+    },
+    {
+      "id": "I3",
+      "hypothesis": "A presença de múltiplos componentes KMS (Amazon Managed KMS key para DynamoDB e RDS) que se conectam ao mesmo vault [fato: O6, O8] pode indicar um acoplamento excessivo, onde a dependência de um único vault para múltiplas chaves pode criar um ponto de falha (SPOF) se o vault falhar.",
+      "cites": [
+        "O6",
+        "O8"
+      ],
+      "confidence": "medium"
+    }
+  ],
+  "concerns": [
+    {
+      "id": "C1",
+      "title": "Falha na conexão entre vaults",
+      "description": "Observei que a relação entre 'sourceCmkKey-BackupVault' e 'destinationCmkKey-BackupVault' possui um visual cue de ✗ [O9], inferi que isso indica uma possível falha na conexão [I1], portanto há risco de que a transferência de dados entre esses vaults não funcione como esperado, comprometendo a recuperação de dados.",
+      "derived_from": [
+        "I1"
+      ],
+      "affected_components": [
+        "sourceCmkKey-BackupVault",
+        "destinationCmkKey-BackupVault"
+      ],
+      "severity": "high",
+      "category": "availability"
+    },
+    {
+      "id": "C2",
+      "title": "Ambiguidade na função dos vaults",
+      "description": "Observei que os componentes 'sourceCmkKey-BackupVault' e 'destinationCmkKey-BackupVault' têm uma classificação ambígua [O12], inferi que isso pode levar a confusões na implementação e no gerenciamento de chaves [I2], portanto há risco de erros operacionais devido à falta de clareza sobre suas funções.",
+      "derived_from": [
+        "I2"
+      ],
+      "affected_components": [
+        "sourceCmkKey-BackupVault",
+        "destinationCmkKey-BackupVault"
+      ],
+      "severity": "medium",
+      "category": "operational"
+    },
+    {
+      "id": "C3",
+      "title": "Ponto de falha potencial",
+      "description": "Observei que existem múltiplos componentes KMS conectando-se ao mesmo vault [O6, O8], inferi que isso pode indicar um acoplamento excessivo [I3], portanto há risco de que a falha do vault comprometa a funcionalidade de múltiplas chaves, criando um ponto de falha (SPOF).",
+      "derived_from": [
+        "I3"
+      ],
+      "affected_components": [
+        "sourceCmkKey-BackupVault",
+        "Amazon Managed KMS key (aws/dynamodb)",
+        "Amazon Managed KMS key (aws/rds)"
+      ],
+      "severity": "medium",
+      "category": "availability"
+    }
+  ],
+  "limitations": [
+    {
+      "id": "L1",
+      "statement": "Não é possível confirmar se há autenticação ou controle de acesso visível entre os componentes, pois o diagrama não fornece informações suficientes sobre esses aspectos.",
+      "reason": "ambiguous_diagram"
+    },
+    {
+      "id": "L2",
+      "statement": "O diagrama não mostra detalhes sobre a replicação ou failover dos vaults, limitando a análise de disponibilidade a apenas o que é estruturalmente visível.",
+      "reason": "ambiguous_diagram"
+    }
+  ]
 }

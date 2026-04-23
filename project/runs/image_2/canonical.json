@@ -2,36 +2,105 @@
   "components": [
     {
       "name": "Amazon Managed KMS key (aws/dynamodb)",
-      "type": "service"
+      "type": "service",
+      "subtype": "aws_kms",
+      "provider": "aws",
+      "is_managed_service": true,
+      "confidence": 0.9,
+      "evidence": {
+        "label_text": "Amazon Managed KMS key (aws/dynamodb)"
+      }
     },
     {
       "name": "sourceCmkKey-BackupVault",
-      "type": "service"
+      "type": "service",
+      "subtype": "aws_kms",
+      "provider": "aws",
+      "confidence": 0.8,
+      "evidence": {
+        "label_text": "sourceCmkKey-BackupVault"
+      }
     },
     {
       "name": "destinationCmkKey-BackupVault",
-      "type": "service"
+      "type": "service",
+      "subtype": "aws_kms",
+      "provider": "aws",
+      "confidence": 0.8,
+      "evidence": {
+        "label_text": "destinationCmkKey-BackupVault"
+      }
     },
     {
       "name": "Amazon Managed KMS key (aws/rds)",
-      "type": "service"
+      "type": "service",
+      "subtype": "aws_kms",
+      "provider": "aws",
+      "is_managed_service": true,
+      "confidence": 0.9,
+      "evidence": {
+        "label_text": "Amazon Managed KMS key (aws/rds)"
+      }
     }
   ],
   "relationships": [
     {
       "from": "Amazon Managed KMS key (aws/dynamodb)",
-      "to": "sourceCmkKey-BackupVault"
+      "to": "sourceCmkKey-BackupVault",
+      "relation_type": "connect",
+      "direction": "source_to_target",
+      "direction_confidence": "high",
+      "confidence": 0.85,
+      "evidence": {
+        "arrow_detected": true
+      }
     },
     {
       "from": "sourceCmkKey-BackupVault",
-      "to": "destinationCmkKey-BackupVault"
+      "to": "destinationCmkKey-BackupVault",
+      "relation_type": "connect",
+      "direction": "source_to_target",
+      "direction_confidence": "high",
+      "confidence": 0.85,
+      "evidence": {
+        "arrow_detected": true,
+        "visual_cue": "✓"
+      }
     },
     {
       "from": "Amazon Managed KMS key (aws/rds)",
-      "to": "sourceCmkKey-BackupVault"
+      "to": "sourceCmkKey-BackupVault",
+      "relation_type": "connect",
+      "direction": "source_to_target",
+      "direction_confidence": "high",
+      "confidence": 0.85,
+      "evidence": {
+        "arrow_detected": true
+      }
+    },
+    {
+      "from": "sourceCmkKey-BackupVault",
+      "to": "destinationCmkKey-BackupVault",
+      "relation_type": "connect",
+      "direction": "source_to_target",
+      "direction_confidence": "high",
+      "confidence": 0.85,
+      "evidence": {
+        "arrow_detected": true,
+        "visual_cue": "✗"
+      }
     }
   ],
   "uncertainties": [
-    "Ambiguidade na conexão entre sourceCmkKey-BackupVault e destinationCmkKey-BackupVault na parte inferior do diagrama."
+    {
+      "kind": "component_classification",
+      "target": "sourceCmkKey-BackupVault",
+      "note": "Ambiguous role due to lack of specific icon or label"
+    },
+    {
+      "kind": "component_classification",
+      "target": "destinationCmkKey-BackupVault",
+      "note": "Ambiguous role due to lack of specific icon or label"
+    }
   ]
 }
