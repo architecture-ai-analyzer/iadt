@@ -47,7 +47,6 @@
     {
       "from": "Amazon Managed KMS key (aws/dynamodb)",
       "to": "sourceCmkKey-BackupVault",
-      "relation_type": "connect",
       "direction": "source_to_target",
       "direction_confidence": "high",
       "confidence": 0.85,
@@ -58,19 +57,17 @@
     {
       "from": "sourceCmkKey-BackupVault",
       "to": "destinationCmkKey-BackupVault",
-      "relation_type": "connect",
       "direction": "source_to_target",
       "direction_confidence": "high",
       "confidence": 0.85,
       "evidence": {
         "arrow_detected": true,
-        "visual_cue": "✓"
+        "visual_cue": "ícone ✓ ao lado do fluxo"
       }
     },
     {
       "from": "Amazon Managed KMS key (aws/rds)",
       "to": "sourceCmkKey-BackupVault",
-      "relation_type": "connect",
       "direction": "source_to_target",
       "direction_confidence": "high",
       "confidence": 0.85,
@@ -81,26 +78,14 @@
     {
       "from": "sourceCmkKey-BackupVault",
       "to": "destinationCmkKey-BackupVault",
-      "relation_type": "connect",
       "direction": "source_to_target",
       "direction_confidence": "high",
       "confidence": 0.85,
       "evidence": {
         "arrow_detected": true,
-        "visual_cue": "✗"
+        "visual_cue": "ícone ✗ ao lado do fluxo"
       }
     }
   ],
-  "uncertainties": [
-    {
-      "kind": "component_classification",
-      "target": "sourceCmkKey-BackupVault",
-      "note": "Ambiguous role due to lack of specific icon or label"
-    },
-    {
-      "kind": "component_classification",
-      "target": "destinationCmkKey-BackupVault",
-      "note": "Ambiguous role due to lack of specific icon or label"
-    }
-  ]
+  "uncertainties": []
 }

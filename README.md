@@ -11,6 +11,7 @@ Pipeline de IA que recebe um diagrama de arquitetura (imagem ou PDF) e gera auto
 
 ```bash
 cd project
+winget install -e --id Python.Python.3.13
 pip install -e ".[dev]"
 ```
 

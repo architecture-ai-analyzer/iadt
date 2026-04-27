@@ -14,6 +14,8 @@ llm/text.py
 orchestrator/__init__.py
 orchestrator/pipeline.py
 pipelines/__init__.py
+pipelines/p1_2_semantic_enrichment/__init__.py
+pipelines/p1_2_semantic_enrichment/_prompts.py
 pipelines/p1_extraction/__init__.py
 pipelines/p1_extraction/_prompts.py
 pipelines/p1_extraction/classifier.py
@@ -21,13 +23,7 @@ pipelines/p1_extraction/image_route.py
 pipelines/p1_extraction/pdf_exported_route.py
 pipelines/p1_extraction/pdf_scanned_route.py
 pipelines/p2_risk_analysis/__init__.py
-pipelines/p2_risk_analysis/registry.py
-pipelines/p2_risk_analysis/rules/__init__.py
-pipelines/p2_risk_analysis/rules/centralized_database.py
-pipelines/p2_risk_analysis/rules/excessive_coupling.py
-pipelines/p2_risk_analysis/rules/missing_edge_auth.py
-pipelines/p2_risk_analysis/rules/single_point_of_failure.py
-pipelines/p2_risk_analysis/rules/unmediated_external.py
+pipelines/p2_risk_analysis/reasoning.py
 pipelines/p3_report_generation/__init__.py
 pipelines/p4_validation/__init__.py
 pipelines/p4_validation/consistency.py

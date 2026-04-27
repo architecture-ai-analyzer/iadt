@@ -29,6 +29,7 @@
       "name": "Custom Connector to Timestream",
       "type": "connector",
       "role": "connector",
+      "provider": "aws",
       "confidence": 0.8,
       "evidence": {
         "label_text": "Custom Connector to Timestream"
@@ -61,9 +62,7 @@
     {
       "name": "AWS IoT TwinMaker Connector to SiteWise",
       "type": "connector",
-      "role": "connector",
       "provider": "aws",
-      "is_managed_service": true,
       "confidence": 0.8,
       "evidence": {
         "label_text": "AWS IoT TwinMaker Connector to SiteWise"
@@ -79,6 +78,18 @@
       "evidence": {
         "icon_detected": "aws_iot_twinmaker_icon",
         "label_text": "AWS IoT TwinMaker"
+      }
+    },
+    {
+      "name": "Amazon S3",
+      "type": "storage",
+      "subtype": "aws_s3",
+      "provider": "aws",
+      "is_managed_service": true,
+      "confidence": 0.9,
+      "evidence": {
+        "icon_detected": "aws_s3_icon",
+        "label_text": "Amazon S3"
       }
     },
     {
@@ -101,18 +112,6 @@
       "evidence": {
         "label_text": "Simulated Electric Car Data"
       }
-    },
-    {
-      "name": "Amazon S3",
-      "type": "storage",
-      "subtype": "aws_s3",
-      "provider": "aws",
-      "is_managed_service": true,
-      "confidence": 0.9,
-      "evidence": {
-        "icon_detected": "aws_s3_icon",
-        "label_text": "Amazon S3"
-      }
     }
   ],
   "relationships": [
@@ -128,9 +127,58 @@
       }
     },
     {
+      "from": "AWS IoT Core",
+      "to": "AWS IoT SiteWise",
+      "direction": "source_to_target",
+      "direction_confidence": "high",
+      "confidence": 0.9,
+      "evidence": {
+        "arrow_detected": true
+      }
+    },
+    {
+      "from": "AWS IoT SiteWise",
+      "to": "AWS IoT TwinMaker Connector to SiteWise",
+      "direction": "source_to_target",
+      "direction_confidence": "high",
+      "confidence": 0.9,
+      "evidence": {
+        "arrow_detected": true
+      }
+    },
+    {
+      "from": "AWS IoT TwinMaker Connector to SiteWise",
+      "to": "AWS IoT TwinMaker",
+      "direction": "source_to_target",
+      "direction_confidence": "high",
+      "confidence": 0.9,
+      "evidence": {
+        "arrow_detected": true
+      }
+    },
+    {
+      "from": "AWS IoT TwinMaker",
+      "to": "Amazon Managed Service for Grafana",
+      "direction": "source_to_target",
+      "direction_confidence": "high",
+      "confidence": 0.9,
+      "evidence": {
+        "arrow_detected": true
+      }
+    },
+    {
+      "from": "AWS IoT TwinMaker",
+      "to": "Amazon S3",
+      "direction": "source_to_target",
+      "direction_confidence": "high",
+      "confidence": 0.9,
+      "evidence": {
+        "arrow_detected": true
+      }
+    },
+    {
       "from": "Custom Connector to Timestream",
       "to": "Amazon Timestream",
-      "relation_type": "connect",
       "direction": "source_to_target",
       "direction_confidence": "high",
       "confidence": 0.8,
@@ -141,62 +189,6 @@
     {
       "from": "Simulated Electric Car Data",
       "to": "AWS IoT SiteWise",
-      "relation_type": "connect",
-      "direction": "source_to_target",
-      "direction_confidence": "high",
-      "confidence": 0.8,
-      "evidence": {
-        "arrow_detected": true
-      }
-    },
-    {
-      "from": "AWS IoT Core",
-      "to": "AWS IoT SiteWise",
-      "relation_type": "connect",
-      "direction": "source_to_target",
-      "direction_confidence": "high",
-      "confidence": 0.8,
-      "evidence": {
-        "arrow_detected": true
-      }
-    },
-    {
-      "from": "AWS IoT SiteWise",
-      "to": "AWS IoT TwinMaker Connector to SiteWise",
-      "relation_type": "connect",
-      "direction": "source_to_target",
-      "direction_confidence": "high",
-      "confidence": 0.8,
-      "evidence": {
-        "arrow_detected": true
-      }
-    },
-    {
-      "from": "AWS IoT TwinMaker Connector to SiteWise",
-      "to": "AWS IoT TwinMaker",
-      "relation_type": "connect",
-      "direction": "source_to_target",
-      "direction_confidence": "high",
-      "confidence": 0.8,
-      "evidence": {
-        "arrow_detected": true
-      }
-    },
-    {
-      "from": "AWS IoT TwinMaker",
-      "to": "Amazon Managed Service for Grafana",
-      "relation_type": "connect",
-      "direction": "source_to_target",
-      "direction_confidence": "high",
-      "confidence": 0.8,
-      "evidence": {
-        "arrow_detected": true
-      }
-    },
-    {
-      "from": "AWS IoT TwinMaker",
-      "to": "Amazon S3",
-      "relation_type": "connect",
       "direction": "source_to_target",
       "direction_confidence": "high",
       "confidence": 0.8,

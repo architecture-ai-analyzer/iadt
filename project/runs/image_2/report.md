@@ -1,40 +1,46 @@
 # Relatório de Análise de Arquitetura
 
 ## 1. Resumo executivo
-O diagrama de arquitetura apresentado ilustra um fluxo de backup e recuperação de dados, utilizando componentes de gerenciamento de chaves e vaults, com foco na segurança dos dados através de chaves gerenciadas pela Amazon Web Services (AWS). O padrão arquitetural identificado é o "backup_dr", que enfatiza a proteção de dados em um vault, utilizando chaves de gerenciamento de segurança. Os principais componentes incluem chaves do AWS Key Management Service (KMS) para DynamoDB e RDS, além de vaults de backup.
+O diagrama de arquitetura apresentado ilustra um fluxo de backup e recuperação de dados utilizando chaves gerenciadas pelo AWS KMS. O foco principal é a interação entre diferentes componentes de gerenciamento de chaves e cofres de backup, destacando como os dados são protegidos e gerenciados durante o processo de backup. A arquitetura é composta por quatro componentes principais, todos do tipo serviço com o subtipo aws_kms, que desempenham papéis cruciais na segurança e integridade dos dados.
 
-A análise revelou algumas preocupações significativas, incluindo a possibilidade de falhas na conexão entre vaults, ambiguidade na função dos vaults e o risco de um ponto de falha (SPOF) devido ao acoplamento excessivo de componentes. Essas questões podem impactar a disponibilidade e a operação do sistema, exigindo atenção para garantir a integridade e a recuperação dos dados.
+Os principais achados incluem a presença de redundância nos cofres de backup, a complexidade no fluxo de dados devido a visuais contraditórios e a falta de um componente centralizado para autenticação e autorização. Essas questões levantam preocupações sobre a eficiência operacional, a clareza no gerenciamento de dados e a segurança da arquitetura.
 
 ## 2. Componentes identificados
-- **Amazon Managed KMS key (aws/dynamodb)**: Tipo: service; Descrição: Chave gerenciada pela AWS para criptografia de dados no DynamoDB.
-- **sourceCmkKey-BackupVault**: Tipo: service; Descrição: Chave de gerenciamento de cliente (CMK) associada a um vault de backup, com função ambígua.
-- **destinationCmkKey-BackupVault**: Tipo: service; Descrição: Chave de gerenciamento de cliente (CMK) associada a um vault de backup, com função ambígua.
-- **Amazon Managed KMS key (aws/rds)**: Tipo: service; Descrição: Chave gerenciada pela AWS para criptografia de dados no RDS.
+- **Amazon Managed KMS key (aws/dynamodb)**: Serviço gerenciado da AWS que fornece chaves de criptografia para proteger dados armazenados no DynamoDB.
+- **sourceCmkKey-BackupVault**: Cofre de backup que utiliza uma chave de gerenciamento de cliente (CMK) para proteger os dados de backup.
+- **destinationCmkKey-BackupVault**: Outro cofres de backup que também utiliza uma chave de gerenciamento de cliente (CMK) para proteger os dados de backup.
+- **Amazon Managed KMS key (aws/rds)**: Serviço gerenciado da AWS que fornece chaves de criptografia para proteger dados armazenados no Amazon RDS.
 
 ## 3. Relações observadas
-As relações entre os componentes são predominantemente do tipo "connect", indicando que as chaves KMS se conectam aos vaults de backup. A relação entre "Amazon Managed KMS key (aws/dynamodb)" e "sourceCmkKey-BackupVault" é forte, com alta confiança. Da mesma forma, "Amazon Managed KMS key (aws/rds)" também se conecta ao "sourceCmkKey-BackupVault". No entanto, a relação entre "sourceCmkKey-BackupVault" e "destinationCmkKey-BackupVault" apresenta um visual cue de ✗, sugerindo uma possível falha na conexão ou na funcionalidade esperada.
+As relações entre os componentes são as seguintes:
+- A **Amazon Managed KMS key (aws/dynamodb)** está conectada ao **sourceCmkKey-BackupVault**, indicando que a chave KMS é utilizada para proteger os dados que são enviados para o cofre de backup.
+- O **sourceCmkKey-BackupVault** está conectado ao **destinationCmkKey-BackupVault**, sugerindo que os dados podem ser transferidos ou replicados entre os dois cofres de backup.
+- A **Amazon Managed KMS key (aws/rds)** também se conecta ao **sourceCmkKey-BackupVault**, indicando que os dados do RDS são protegidos antes de serem enviados para o cofre de backup.
 
 ## 4. Riscos arquiteturais
-- **Falha na conexão entre vaults** | Severidade: alta | Componentes afetados: sourceCmkKey-BackupVault, destinationCmkKey-BackupVault  
-  Observei que a relação entre 'sourceCmkKey-BackupVault' e 'destinationCmkKey-BackupVault' possui um visual cue de ✗ [O9], inferi que isso indica uma possível falha na conexão [I1], portanto me preocupo com a transferência de dados entre esses vaults não funcionando como esperado, comprometendo a recuperação de dados.
+### Redundância de Cofres de Backup
+- **Severidade**: Média
+- **Componentes afetados**: sourceCmkKey-BackupVault, destinationCmkKey-BackupVault
+- **Raciocínio**: Observei que existem dois cofres de backup (sourceCmkKey-BackupVault e destinationCmkKey-BackupVault) com a mesma relação de fluxo [O3]. Inferi que isso pode indicar uma redundância desnecessária [I1], portanto me preocupo com a complexidade e custo desnecessário no gerenciamento de backups.
 
-- **Ambiguidade na função dos vaults** | Severidade: média | Componentes afetados: sourceCmkKey-BackupVault, destinationCmkKey-BackupVault  
-  Observei que os componentes 'sourceCmkKey-BackupVault' e 'destinationCmkKey-BackupVault' têm uma classificação ambígua [O12], inferi que isso pode levar a confusões na implementação e no gerenciamento de chaves [I2], portanto me preocupo com erros operacionais devido à falta de clareza sobre suas funções.
+### Complexidade no Fluxo de Dados
+- **Severidade**: Média
+- **Componentes afetados**: sourceCmkKey-BackupVault, destinationCmkKey-BackupVault
+- **Raciocínio**: Observei que a relação entre sourceCmkKey-BackupVault e destinationCmkKey-BackupVault apresenta visuais contraditórios (✓ e ✗) [O7, O8]. Inferi que isso sugere uma complexidade adicional no gerenciamento de backups [I2], portanto me preocupo com a confusão na implementação e operação do fluxo de dados.
 
-- **Ponto de falha potencial** | Severidade: média | Componentes afetados: sourceCmkKey-BackupVault, Amazon Managed KMS key (aws/dynamodb), Amazon Managed KMS key (aws/rds)  
-  Observei que existem múltiplos componentes KMS conectando-se ao mesmo vault [O6, O8], inferi que isso pode indicar um acoplamento excessivo [I3], portanto me preocupo que a falha do vault comprometa a funcionalidade de múltiplas chaves, criando um ponto de falha (SPOF).
+### Falta de Visibilidade em Segurança
+- **Severidade**: Alta
+- **Componentes afetados**: Amazon Managed KMS key (aws/dynamodb), Amazon Managed KMS key (aws/rds)
+- **Raciocínio**: Observei que não há componentes visíveis que centralizem a autenticação ou autorização para o uso das chaves KMS [O2]. Inferi que isso pode indicar uma dependência de configurações externas [I3], portanto me preocupo com riscos de segurança se essas configurações não forem geridas adequadamente.
 
 ## 5. Recomendações
-- **Para a falha na conexão entre vaults**: Realizar testes de conectividade e implementar monitoramento para detectar falhas na comunicação entre os vaults. Considerar a implementação de redundância para garantir a transferência de dados.
-  
-- **Para a ambiguidade na função dos vaults**: Definir claramente as funções e responsabilidades de cada vault, utilizando documentação e rótulos visuais apropriados para evitar confusões na implementação e no gerenciamento.
-
-- **Para o ponto de falha potencial**: Avaliar a arquitetura para reduzir o acoplamento entre os componentes KMS e os vaults. Considerar a implementação de múltiplos vaults para distribuir a carga e minimizar o impacto de uma falha.
+- **Redundância de Cofres de Backup**: Avaliar a necessidade de manter dois cofres de backup com a mesma função. Se a redundância não for necessária, considere consolidar os cofres para simplificar o gerenciamento e reduzir custos.
+- **Complexidade no Fluxo de Dados**: Revisar a lógica de fluxo entre os cofres de backup para garantir que a documentação e os visuais sejam consistentes. Implementar um sistema de monitoramento que ajude a esclarecer o estado do fluxo de dados.
+- **Falta de Visibilidade em Segurança**: Implementar um componente centralizado para autenticação e autorização que gerencie o acesso às chaves KMS. Isso pode incluir o uso de políticas de IAM e auditorias regulares para garantir que as configurações de segurança estejam adequadas.
 
 ## 6. Limitações da análise
-- **Limitações**: Não é possível confirmar se há autenticação ou controle de acesso visível entre os componentes, pois o diagrama não fornece informações suficientes sobre esses aspectos. O diagrama também não mostra detalhes sobre a replicação ou failover dos vaults, limitando a análise de disponibilidade a apenas o que é estruturalmente visível.
-  
-- **Incertezas**: A classificação ambígua dos componentes 'sourceCmkKey-BackupVault' e 'destinationCmkKey-BackupVault' devido à falta de ícone ou rótulo específico.
+- **Limitações**: Não é possível confirmar se há autenticação ou autorização visíveis no diagrama, o que limita a análise de segurança. (razão: ambiguous_diagram)
+- **Incertezas**: Não foram identificadas incertezas no canonical.
 
 ## 7. Nível de confiança
-A confiança na análise é média. Embora as inferences sejam fundamentadas em observações claras, as limitações relacionadas à falta de informações sobre autenticação, controle de acesso e detalhes de replicação reduzem a certeza sobre a robustez da arquitetura. A ambiguidade na função dos vaults também contribui para a incerteza geral.
+A confiança na análise é média. Embora as inferências sejam baseadas em observações claras e evidências, a limitação em confirmar a presença de autenticação ou autorização visíveis no diagrama reduz a certeza sobre a segurança da arquitetura. As preocupações identificadas são fundamentadas, mas a falta de clareza em alguns aspectos pode impactar a implementação e operação do sistema.
