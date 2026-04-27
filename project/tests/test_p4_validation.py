@@ -2,6 +2,22 @@ from pipelines.p4_validation import validate
 from pipelines.p4_validation.structure import REQUIRED_SECTIONS
 
 
+def _report_all_sections(overrides: dict[str, str] | None = None) -> str:
+    """Relatório com todas as seções obrigatórias e componente conhecido na §2 (evita falso alarme de fabricação)."""
+    blocks = {
+        "## 1. Resumo executivo": "Resumo.",
+        "## 2. Componentes identificados": "- API GW (gateway).",
+        "## 3. Relações observadas": "Sem relações.",
+        "## 4. Riscos arquiteturais": "Sem riscos.",
+        "## 5. Recomendações": "Nenhuma.",
+        "## 6. Limitações da análise": "Nenhuma.",
+        "## 7. Nível de confiança": "Médio.",
+    }
+    if overrides:
+        blocks.update(overrides)
+    return "\n\n".join(f"{h}\n{b}" for h, b in blocks.items())
+
+
 def _make_report(missing_section: str | None = None, extra_content: str = "") -> str:
     sections = [s for s in REQUIRED_SECTIONS if s != missing_section]
     report = "\n\n".join(f"{s}\nConteúdo da seção." for s in sections)
@@ -135,3 +151,59 @@ def test_comparative_diagram_item_in_summary_approved():
     report = _make_report(extra_content="\n## 1. Resumo executivo\nEste diagrama compara Cenário A e Cenário B.")
     result = validate(report, enriched)
     assert result.approved
+
+
+def test_limitation_possivel_no_false_positive_when_full_text_in_section6():
+    """Regression: stopword / hedge 'possível' na limitation não deve reprovar por 'Possível SPOF' na §4."""
+    limitation_text = (
+        "É possível que pequenos detalhes do diagrama não tenham sido capturados na análise automatizada."
+    )
+    enriched = _make_enriched(
+        limitations=[{"id": "L1", "statement": limitation_text}],
+    )
+    report = _report_all_sections(
+        {
+            "## 4. Riscos arquiteturais": "Possível SPOF no API GW se o gateway cair.",
+            "## 6. Limitações da análise": limitation_text,
+        }
+    )
+    result = validate(report, enriched)
+    assert result.approved, result.errors
+
+
+def test_limitation_long_duplicate_in_section4_still_rejected():
+    limitation_text = (
+        "Aspectos relevantes de conformidade regulatória não foram validados contra requisitos externos formais."
+    )
+    enriched = _make_enriched(
+        limitations=[{"id": "L1", "statement": limitation_text}],
+    )
+    report = _report_all_sections(
+        {
+            "## 4. Riscos arquiteturais": limitation_text + " Contexto adicional na seção de riscos.",
+            "## 6. Limitações da análise": "Limitações genéricas não relacionadas ao texto acima.",
+        }
+    )
+    result = validate(report, enriched)
+    assert not result.approved
+    assert any("limitation" in e.lower() or "parece estar" in e for e in result.errors)
+
+
+def test_limitation_bigram_in_section4_rejected_when_not_substantially_in_section6():
+    limitation_text = (
+        "Aspectos críticos de segurança física não foram cobertos pela revisão automatizada extensiva."
+    )
+    enriched = _make_enriched(
+        limitations=[{"id": "L1", "statement": limitation_text}],
+    )
+    report = _report_all_sections(
+        {
+            "## 4. Riscos arquiteturais": (
+                "Há aspectos críticos de segurança no perímetro exposto que merecem atenção."
+            ),
+            "## 6. Limitações da análise": "Análise baseada apenas no diagrama entregue.",
+        }
+    )
+    result = validate(report, enriched)
+    assert not result.approved
+    assert any("parece estar" in e for e in result.errors)

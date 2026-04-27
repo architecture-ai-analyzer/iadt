@@ -1,8 +1,171 @@
+import re
 from typing import Any
 
 from config.logging_config import get_logger
 
 logger = get_logger(__name__)
+
+# Palavras funcionais / hedge comuns que geram falso positivo ao comparar limitation vs §4 (ex.: "possível").
+_PT_STOPWORDS = frozenset(
+    {
+        "a",
+        "ao",
+        "aos",
+        "aquela",
+        "aquele",
+        "aquelas",
+        "aqueles",
+        "aquilo",
+        "as",
+        "ate",
+        "até",
+        "com",
+        "como",
+        "da",
+        "das",
+        "de",
+        "do",
+        "dos",
+        "e",
+        "ela",
+        "elas",
+        "ele",
+        "eles",
+        "em",
+        "entre",
+        "era",
+        "eram",
+        "essa",
+        "esse",
+        "esta",
+        "este",
+        "eu",
+        "foram",
+        "foi",
+        "ha",
+        "há",
+        "isso",
+        "ja",
+        "já",
+        "mais",
+        "mas",
+        "menos",
+        "mesma",
+        "mesmo",
+        "mesmos",
+        "meu",
+        "minha",
+        "muito",
+        "na",
+        "nao",
+        "nas",
+        "nem",
+        "no",
+        "nos",
+        "não",
+        "o",
+        "os",
+        "ou",
+        "para",
+        "pela",
+        "pelas",
+        "pelo",
+        "pelos",
+        "por",
+        "qual",
+        "quais",
+        "quando",
+        "que",
+        "se",
+        "sem",
+        "ser",
+        "só",
+        "so",
+        "sobre",
+        "sua",
+        "suas",
+        "são",
+        "tal",
+        "talvez",
+        "também",
+        "tem",
+        "ter",
+        "teu",
+        "teve",
+        "tinha",
+        "toda",
+        "todas",
+        "todo",
+        "todos",
+        "tu",
+        "tua",
+        "um",
+        "uma",
+        "uns",
+        "umas",
+        "vos",
+        "à",
+        "às",
+        "num",
+        "numa",
+        "possivel",
+        "possíveis",
+        "possiveis",
+        "possível",
+        "pode",
+        "podem",
+    }
+)
+
+_MIN_SIGNIFICANT_LEN = 4
+_MIN_LONG_DUP_CHARS = 40
+
+
+def _normalize_ws(text: str) -> str:
+    return re.sub(r"\s+", " ", text.strip())
+
+
+def _tokenize_words(text: str) -> list[str]:
+    return re.findall(r"[a-z0-9áàâãéêíóôõúç]+", text.lower())
+
+
+def _significant_tokens(statement_lower: str) -> list[str]:
+    words = _tokenize_words(statement_lower)
+    return [w for w in words if len(w) >= _MIN_SIGNIFICANT_LEN and w not in _PT_STOPWORDS]
+
+
+def _limitation_substantially_in_section6(
+    statement_lower: str,
+    section6_lower: str,
+    sig_tokens: list[str],
+) -> bool:
+    stmt_n = _normalize_ws(statement_lower)
+    sec6_n = _normalize_ws(section6_lower)
+    if len(stmt_n) >= 12 and stmt_n in sec6_n:
+        return True
+    if len(stmt_n) >= 12:
+        if stmt_n.replace(" ", "") in sec6_n.replace(" ", ""):
+            return True
+    if not sig_tokens:
+        return False
+    hits = sum(1 for w in sig_tokens if w in section6_lower)
+    threshold = max(2, (len(sig_tokens) + 1) // 2)
+    if hits >= threshold:
+        return True
+    for a, b in zip(sig_tokens, sig_tokens[1:]):
+        if f"{a} {b}" in section6_lower:
+            return True
+    return False
+
+
+def _long_duplicate_fragment(statement_lower: str, section4_lower: str) -> bool:
+    stmt_n = _normalize_ws(statement_lower)
+    if len(stmt_n) < _MIN_LONG_DUP_CHARS:
+        return False
+    for i in range(0, len(stmt_n) - _MIN_LONG_DUP_CHARS + 1):
+        if stmt_n[i : i + _MIN_LONG_DUP_CHARS] in section4_lower:
+            return True
+    return False
 
 
 def validate(report: str, enriched: dict[str, Any]) -> list[str]:
@@ -80,14 +243,35 @@ def _check_concern_limitation_separation(report: str, enriched: dict[str, Any]) 
     concern_titles = [c["title"].lower() for c in enriched.get("concerns", [])]
     limitation_statements = [lim["statement"].lower() for lim in enriched.get("limitations", [])]
 
+    section4_lower = section4.lower()
+    section6_lower = section6.lower()
+
     for title in concern_titles:
-        if title in section6.lower():
+        if title in section6_lower:
             errors.append(f"concern '{title}' aparece na seção 6 (limitações) — concerns pertencem à seção 4")
 
     for stmt in limitation_statements:
-        stmt_words = [w for w in stmt.split() if len(w) > 4][:3]
-        if any(w in section4.lower() for w in stmt_words):
-            errors.append(f"limitation '{stmt[:60]}' parece estar na seção 4 (riscos) — limitations pertencem à seção 6")
+        sig = _significant_tokens(stmt)
+        in_s6 = _limitation_substantially_in_section6(stmt, section6_lower, sig)
+
+        if _long_duplicate_fragment(stmt, section4_lower):
+            errors.append(
+                f"limitation '{stmt[:60]}' parece estar na seção 4 (riscos) — limitations pertencem à seção 6"
+            )
+            continue
+
+        if in_s6:
+            continue
+
+        if len(sig) < 2:
+            continue
+
+        for w1, w2 in zip(sig, sig[1:]):
+            if f"{w1} {w2}" in section4_lower:
+                errors.append(
+                    f"limitation '{stmt[:60]}' parece estar na seção 4 (riscos) — limitations pertencem à seção 6"
+                )
+                break
 
     return errors
 
