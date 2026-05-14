@@ -10,17 +10,22 @@ dependencies = [
     "jsonschema>=4.23.0",
     "python-dotenv>=1.0.0",
     "Pillow>=10.0.0",
+    "boto3>=1.35.0",
 ]
 
 [project.optional-dependencies]
 dev = [
     "pytest>=8.0.0",
     "pytest-asyncio>=0.23.0",
+    "moto[sqs,s3]>=5.0.0",
 ]
+
+[project.scripts]
+iadt-worker = "worker:main"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["config*", "llm*", "pipelines*", "orchestrator*", "schemas*"]
+include = ["config*", "llm*", "pipelines*", "orchestrator*", "schemas*", "domain*", "adapters*"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

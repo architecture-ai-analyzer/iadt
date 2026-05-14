@@ -4,21 +4,12 @@ from pathlib import Path
 from typing import Any
 
 from config.logging_config import get_logger
+from domain.report_layout import REQUIRED_SECTIONS
 from llm.text import call_text
 
 logger = get_logger(__name__)
 
 _PROMPT_TEMPLATE = (Path(__file__).parent.parent.parent / "prompts" / "relatorio.md").read_text(encoding="utf-8")
-
-REQUIRED_SECTIONS = [
-    "## 1. Resumo executivo",
-    "## 2. Componentes identificados",
-    "## 3. Relações observadas",
-    "## 4. Riscos arquiteturais",
-    "## 5. Recomendações",
-    "## 6. Limitações da análise",
-    "## 7. Nível de confiança",
-]
 
 
 def generate(enriched: dict[str, Any]) -> str:

@@ -21,3 +21,9 @@ LOG_FORMAT: str = os.getenv("LOG_FORMAT", "json")
 SUPPORTED_EXTENSIONS = {".png", ".jpg", ".jpeg", ".pdf"}
 PDF_TEXT_THRESHOLD = 50
 LLM_MAX_RETRIES = 1
+
+AWS_REGION: str = os.getenv("AWS_REGION", "us-east-1")
+IADT_INPUT_QUEUE_URL: str = os.getenv("IADT_INPUT_QUEUE_URL", "")
+IADT_OUTPUT_QUEUE_URL: str = os.getenv("IADT_OUTPUT_QUEUE_URL", "")
+IADT_WORKER_VISIBILITY_TIMEOUT: int = int(os.getenv("IADT_WORKER_VISIBILITY_TIMEOUT", "900"))
+IADT_WORKER_OUTPUT_MAX_BYTES: int = int(os.getenv("IADT_WORKER_OUTPUT_MAX_BYTES", "230000"))

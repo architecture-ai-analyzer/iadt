@@ -20,8 +20,13 @@ def _report_all_sections(overrides: dict[str, str] | None = None) -> str:
 
 def _make_report(missing_section: str | None = None, extra_content: str = "") -> str:
     sections = [s for s in REQUIRED_SECTIONS if s != missing_section]
-    report = "\n\n".join(f"{s}\nConteúdo da seção." for s in sections)
-    return report + "\n\nAPI GW é o componente principal.\n" + extra_content
+    blocks: list[str] = []
+    for s in sections:
+        body = "Conteúdo da seção."
+        if s == "## 2. Componentes identificados":
+            body = "- API GW (gateway): componente principal do fluxo."
+        blocks.append(f"{s}\n{body}")
+    return "\n\n".join(blocks) + extra_content
 
 
 def _make_enriched(
@@ -148,7 +153,9 @@ def test_comparative_diagram_item_in_summary_approved():
         intent_kind="comparison",
         compared_items=["Cenário A", "Cenário B"],
     )
-    report = _make_report(extra_content="\n## 1. Resumo executivo\nEste diagrama compara Cenário A e Cenário B.")
+    report = _report_all_sections({
+        "## 1. Resumo executivo": "Este diagrama compara Cenário A e Cenário B.",
+    })
     result = validate(report, enriched)
     assert result.approved
 

@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>IADT — Fluxo CLI e Worker SQS</title>
+  <style>
+    :root {
+      --bg: #0f1419;
+      --surface: #1a2332;
+      --border: #2d3a4d;
+      --text: #e6edf3;
+      --muted: #8b9cb3;
+      --accent: #58a6ff;
+      --ok: #3fb950;
+      --warn: #d29922;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      font-size: 1rem;
+    }
+    .wrap {
+      max-width: 52rem;
+      margin: 0 auto;
+      padding: 2rem 1.25rem 4rem;
+    }
+    header {
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 1.5rem;
+      margin-bottom: 2rem;
+    }
+    h1 {
+      font-size: 1.75rem;
+      font-weight: 600;
+      margin: 0 0 0.5rem;
+      letter-spacing: -0.02em;
+    }
+    .lead { color: var(--muted); margin: 0; font-size: 1.05rem; }
+    h2 {
+      font-size: 1.2rem;
+      font-weight: 600;
+      margin: 2.25rem 0 0.75rem;
+      color: var(--accent);
+    }
+    h3 {
+      font-size: 1rem;
+      font-weight: 600;
+      margin: 1.5rem 0 0.5rem;
+      color: var(--text);
+    }
+    p { margin: 0.65rem 0; }
+    ul, ol { margin: 0.5rem 0; padding-left: 1.35rem; }
+    li { margin: 0.35rem 0; }
+    code, .path {
+      font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+      font-size: 0.88em;
+      background: var(--surface);
+      padding: 0.12em 0.4em;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+    }
+    .path { display: inline-block; margin: 0.1em 0; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1rem 0;
+      font-size: 0.92rem;
+    }
+    th, td {
+      border: 1px solid var(--border);
+      padding: 0.6rem 0.75rem;
+      text-align: left;
+      vertical-align: top;
+    }
+    th { background: var(--surface); color: var(--muted); font-weight: 600; }
+    .flow {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      margin: 1rem 0;
+      font-family: ui-monospace, Consolas, monospace;
+      font-size: 0.82rem;
+      line-height: 1.5;
+      overflow-x: auto;
+      white-space: pre;
+      color: var(--muted);
+    }
+    .note {
+      border-left: 3px solid var(--warn);
+      padding: 0.5rem 0 0.5rem 1rem;
+      margin: 1rem 0;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+    footer {
+      margin-top: 3rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 0.85rem;
+    }
+    a { color: var(--accent); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>IADT — Visão geral do fluxo (CLI e Worker SQS)</h1>
+      <p class="lead">
+        Descrição do que foi implementado: entradas, arquivos envolvidos, pipeline compartilhado e saída
+        (disco ou fila JSON).
+      </p>
+    </header>
+
+    <h2>Visão geral</h2>
+    <p>
+      O mesmo núcleo de processamento — a função <code>run()</code> do orquestrador — atende dois modos:
+    </p>
+    <ol>
+      <li><strong>CLI (local)</strong>: você passa o caminho de um arquivo no disco (imagem ou PDF).</li>
+      <li><strong>Worker SQS</strong>: um processo contínuo lê mensagens da fila de entrada, baixa o objeto do
+        <strong>S3</strong>, executa o pipeline e publica um <strong>JSON</strong> na fila de saída.</li>
+    </ol>
+    <p>
+      A pasta <code>domain/</code> concentra regras puras (contratos de mensagem, layout do relatório, parse por seções)
+      <strong>sem</strong> dependência de <code>boto3</code>. A pasta <code>adapters/aws/</code> concentra SQS e S3.
+    </p>
+
+    <h2>Fluxo 1 — CLI (arquivo local)</h2>
+    <table>
+      <thead>
+        <tr><th>Etapa</th><th>Onde</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Entrada</td>
+          <td><span class="path">project/cli.py</span> — argumento de linha de comando com o caminho do diagrama.</td>
+        </tr>
+        <tr>
+          <td>Orquestração</td>
+          <td><span class="path">project/orchestrator/pipeline.py</span> — <code>run(file_path, output_dir=...)</code>.</td>
+        </tr>
+        <tr>
+          <td>Saída em disco</td>
+          <td>
+            O mesmo <code>run()</code> grava, no diretório do run:
+            <code>canonical.json</code>, <code>semantic.json</code>, <code>enriched.json</code> e <code>report.md</code>.
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <p>Neste modo não há fila: arquivo local → pipeline → artefatos em <code>runs/…</code> (ou pasta indicada por <code>-o</code>).</p>
+
+    <h2>Fluxo 2 — Worker SQS</h2>
+    <h3>Diagrama lógico</h3>
+    <div class="flow">Fila entrada (SQS)
+  │  ReceiveMessage (Body)
+  ▼
+worker.py  →  adapters/aws/sqs_worker.py  (run_forever / process_one_message)
+  │
+  ├─► domain/messages.py  (parse_input_message → InputJob)
+  │
+  ├─► adapters/aws/s3_source.py  (download_object_to_tempfile)
+  │         │
+  │         └──► S3 (bucket + key)
+  │
+  ├─► orchestrator/pipeline.py  (run em diretório temporário)
+  │
+  ├─► domain/report_sections.py + domain/messages.py
+  │         (Markdown do relatório → objeto report por seções + metadados)
+  │
+  └─► SQS saída  (SendMessage JSON)  →  DeleteMessage na fila de entrada (após envio bem-sucedido)</div>
+
+    <h3>1) Ponto de entrada do processo</h3>
+    <ul>
+      <li><span class="path">project/worker.py</span> — chama <code>run_forever()</code> do módulo SQS.</li>
+      <li>Script instalável (se o pacote estiver instalado em modo editável): <code>iadt-worker</code> (definido no <span class="path">project/pyproject.toml</span>).</li>
+    </ul>
+
+    <h3>2) Configuração</h3>
+    <p><span class="path">project/config/settings.py</span> — variáveis de ambiente, entre outras:</p>
+    <ul>
+      <li><code>AWS_REGION</code></li>
+      <li><code>IADT_INPUT_QUEUE_URL</code> / <code>IADT_OUTPUT_QUEUE_URL</code></li>
+      <li><code>IADT_WORKER_VISIBILITY_TIMEOUT</code></li>
+      <li><code>IADT_WORKER_OUTPUT_MAX_BYTES</code> (limite do corpo JSON na saída)</li>
+    </ul>
+    <p class="note">Credenciais AWS vêm do ambiente da máquina ou da role (ECS/Lambda/EC2), não de chaves no código.</p>
+
+    <h3>3) Loop da fila de entrada</h3>
+    <p>
+      <span class="path">project/adapters/aws/sqs_worker.py</span> — <code>run_forever()</code> cria clientes SQS e S3,
+      faz long polling na URL da fila de entrada e, para cada mensagem, delega a <code>process_one_message()</code>.
+    </p>
+
+    <h3>4) Corpo da mensagem → trabalho normalizado</h3>
+    <p><span class="path">project/domain/messages.py</span> — <code>parse_input_message(body, fallback_job_id=…)</code> aceita, entre outros:</p>
+    <ul>
+      <li>JSON v1 com <code>schema_version</code>, <code>source: { "type": "s3", "bucket", "key" }</code>, <code>job_id</code> opcional;</li>
+      <li>evento no estilo S3 → SQS (<code>Records[0].s3</code>);</li>
+      <li>envelope SNS com string <code>Message</code> contendo um desses JSONs.</li>
+    </ul>
+    <p>O resultado é um <code>InputJob</code>: <code>job_id</code>, <code>correlation_id</code>, <code>source_bucket</code>, <code>source_key</code>.</p>
+    <p>
+      Se o parse falhar, o worker pode enviar à fila de saída um JSON de falha (<code>build_system_failure_output_v1</code>,
+      estágio <code>parse_input</code>), apagar a mensagem da entrada e seguir (evita reprocessamento infinito de mensagem inválida).
+    </p>
+
+    <h3>5) Download do diagrama</h3>
+    <p>
+      <span class="path">project/adapters/aws/s3_source.py</span> — <code>download_object_to_tempfile</code> grava o objeto em arquivo temporário
+      com extensão alinhada ao que o pipeline aceita (<code>SUPPORTED_EXTENSIONS</code> em settings).
+    </p>
+    <p>Se o download falhar → JSON de saída com <code>failure_stage: s3_download</code> → delete na entrada (após envio ok).</p>
+
+    <h3>6) Pipeline (núcleo compartilhado com o CLI)</h3>
+    <p>
+      Com o arquivo local temporário, o worker chama <code>run(local_path, output_dir=diretório_temporário)</code> para não depender de <code>runs/</code> persistente.
+    </p>
+    <p><span class="path">project/orchestrator/pipeline.py</span> — extração → enriquecimento semântico → análise de risco → geração do relatório em Markdown → validação.</p>
+    <p>
+      Os títulos obrigatórios das seções do relatório vivem em um único lugar:
+      <span class="path">project/domain/report_layout.py</span> (importado pelo P3 e pelo parser de seções).
+    </p>
+    <p>Se o pipeline lançar exceção → payload de saída com <code>pipeline_error</code> e estágio de falha apropriado.</p>
+
+    <h3>7) Markdown → JSON por seções (saída na fila)</h3>
+    <p>
+      <span class="path">project/domain/report_sections.py</span> — divide o texto do relatório pelos cabeçalhos <code>## N. …</code>.
+    </p>
+    <p>
+      <span class="path">project/domain/messages.py</span> — <code>build_output_message_v1</code> monta o JSON v1:
+      <code>status</code>, <code>validation</code>, <code>elapsed_s</code>, objeto <code>report</code> com chaves estáveis
+      (por exemplo <code>executive_summary</code>, <code>identified_components</code>, …).
+    </p>
+    <p class="note">
+      O LLM continua gerando Markdown internamente; o que vai para a fila de saída é JSON com o corpo de cada seção como string,
+      não anexo de arquivo <code>.md</code>.
+    </p>
+
+    <h3>8) Limite de tamanho (SQS ~256 KB)</h3>
+    <p><span class="path">project/domain/messages.py</span> — <code>fit_message_payload</code> reduz o JSON se ultrapassar <code>IADT_WORKER_OUTPUT_MAX_BYTES</code>.</p>
+
+    <h3>9) Publicação e reconhecimento da mensagem</h3>
+    <p>
+      Após montar o payload: <code>SendMessage</code> na fila de saída; em seguida <code>DeleteMessage</code> na fila de entrada
+      <strong>só se</strong> o envio (e o delete) tiverem sucesso — se o envio falhar, a mensagem volta após o visibility timeout para nova tentativa.
+    </p>
+
+    <h2>Testes que documentam o comportamento</h2>
+    <ul>
+      <li><span class="path">project/tests/test_report_sections.py</span> — parser de seções (ordem, ausência, limites entre cabeçalhos).</li>
+      <li><span class="path">project/tests/test_messages.py</span> — parse de entrada, montagem de saída e truncagem.</li>
+      <li><span class="path">project/tests/test_sqs_worker_unit.py</span> — fluxo do worker com mocks (sem AWS real).</li>
+    </ul>
+
+    <h2>Resumo em uma frase</h2>
+    <p>
+      <strong>worker.py</strong> chama o loop em <strong>sqs_worker</strong>, que lê a SQS, interpreta o corpo em <strong>messages</strong>,
+      baixa o PDF no <strong>s3_source</strong>, executa <strong>pipeline.run</strong>, serializa o resultado em JSON com seções em <strong>messages/report_sections</strong>,
+      envia para a fila de saída e remove a mensagem da entrada após sucesso; o <strong>CLI</strong> continua chamando <strong>pipeline.run</strong> diretamente com arquivo local.
+    </p>
+
+    <footer>
+      Documento gerado a partir da descrição da arquitetura IADT (CLI + SQS/S3). Repositório:
+      <code>iadt</code> — pasta <code>docs/</code>.
+    </footer>
+  </div>
+</body>
+</html>

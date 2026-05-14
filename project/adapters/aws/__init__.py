@@ -1,0 +1,1 @@
+"""Adaptadores boto3."""

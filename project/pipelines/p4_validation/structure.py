@@ -1,12 +1,4 @@
-REQUIRED_SECTIONS = [
-    "## 1. Resumo executivo",
-    "## 2. Componentes identificados",
-    "## 3. Relações observadas",
-    "## 4. Riscos arquiteturais",
-    "## 5. Recomendações",
-    "## 6. Limitações da análise",
-    "## 7. Nível de confiança",
-]
+from domain.report_layout import REQUIRED_SECTIONS
 
 
 def validate(report: str) -> list[str]:
