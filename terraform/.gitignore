@@ -1,0 +1,56 @@
+# Terraform state files
+*.tfstate
+*.tfstate.*
+terraform.tfstate
+terraform.tfstate.backup
+
+# Terraform lock file
+.terraform.lock.hcl
+
+# Terraform directory
+.terraform/
+
+# Terraform plan files
+tfplan
+tfplan.json
+*.out
+
+# Terraform variables
+*.tfvars
+*.tfvars.json
+!terraform.tfvars.example
+
+# IDE
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+.vscode/
+*.code-workspace
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Temporary files
+*.tmp
+*.temp
+temp/
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Secrets (double safety)
+
+!*secret*.example
+!*key*.example
+
+# Crash dumps
+crash.dump
+
+# Sensitive outputs
+outputs.json
+state.json

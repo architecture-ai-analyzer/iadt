@@ -1,0 +1,32 @@
+region_default = "us-east-2"
+environment    = "dev"
+project_name   = "iadt"
+
+kubernetes_namespace        = "iadt"
+kubernetes_service_account  = "iadt-worker"
+
+# Update this with your actual Docker registry
+iadt_image = "your-registry/iadt-worker:latest"
+
+# Free tier: minimal resources
+iadt_cpu_request    = "250m"
+iadt_cpu_limit      = "500m"
+iadt_memory_request = "256Mi"
+iadt_memory_limit   = "1Gi"
+
+# LLM Configuration
+llm_provider = "openai"
+
+# OpenAI
+openai_api_key        = ""  # Set via TF_VAR_openai_api_key or terraform apply -var
+openai_model_text     = "gpt-4o-mini"
+openai_model_vision   = "gpt-4o"
+
+# Anthropic (fallback)
+anthropic_api_key     = ""  # Set via TF_VAR_anthropic_api_key if needed
+claude_model_text     = "claude-haiku-4-5-20251001"
+claude_model_vision   = "claude-opus-4-5-20251101"
+
+# Logging
+log_level  = "INFO"
+log_format = "json"
