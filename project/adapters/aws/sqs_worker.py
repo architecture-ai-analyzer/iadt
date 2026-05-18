@@ -13,6 +13,8 @@ from adapters.aws.s3_source import download_object_to_tempfile
 from config.logging_config import get_logger
 from config.settings import (
     AWS_REGION,
+    AWS_SECRET_ACCESS_KEY,
+    AWS_ACCESS_KEY_ID,
     IADT_INPUT_QUEUE_URL,
     IADT_OUTPUT_QUEUE_URL,
     IADT_WORKER_OUTPUT_MAX_BYTES,
@@ -142,8 +144,15 @@ def run_forever(
     if not in_url or not out_url:
         raise RuntimeError("IADT_INPUT_QUEUE_URL e IADT_OUTPUT_QUEUE_URL devem estar definidos")
 
-    sqs = boto3.client("sqs", region_name=reg)
-    s3 = boto3.client("s3", region_name=reg)
+    # Configure boto3 clients
+    client_kwargs = {
+        "region_name": reg,
+        "aws_access_key_id": AWS_ACCESS_KEY_ID,
+        "aws_secret_access_key": AWS_SECRET_ACCESS_KEY,
+    }
+
+    sqs = boto3.client("sqs", **client_kwargs)
+    s3 = boto3.client("s3", **client_kwargs)
     logger.info("worker_start", extra={"extra": {"region": reg}})
 
     while True:

@@ -22,8 +22,11 @@ SUPPORTED_EXTENSIONS = {".png", ".jpg", ".jpeg", ".pdf"}
 PDF_TEXT_THRESHOLD = 50
 LLM_MAX_RETRIES = 1
 
-AWS_REGION: str = os.getenv("AWS_REGION", "us-east-1")
+AWS_REGION: str = os.getenv("AWS_REGION", "us-east-2")
+# AWS Credentials (fictícias para LocalStack)
+AWS_ACCESS_KEY_ID: str = os.getenv("AWS_ACCESS_KEY_ID", "test")
+AWS_SECRET_ACCESS_KEY: str = os.getenv("AWS_SECRET_ACCESS_KEY", "test")
 IADT_INPUT_QUEUE_URL: str = os.getenv("IADT_INPUT_QUEUE_URL", "")
-IADT_OUTPUT_QUEUE_URL: str = os.getenv("IADT_OUTPUT_QUEUE_URL", "")
+IADT_OUTPUT_QUEUE_URL: str = os.getenv("IADT_OUTPUT_QUEUE_URL", "https://sqs.us-east-2.amazonaws.com/731962933226/upload-queue")
 IADT_WORKER_VISIBILITY_TIMEOUT: int = int(os.getenv("IADT_WORKER_VISIBILITY_TIMEOUT", "900"))
 IADT_WORKER_OUTPUT_MAX_BYTES: int = int(os.getenv("IADT_WORKER_OUTPUT_MAX_BYTES", "230000"))
