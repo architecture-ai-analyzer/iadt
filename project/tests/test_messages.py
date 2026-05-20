@@ -67,6 +67,24 @@ def test_parse_sns_envelope():
     assert job.job_id == "j"
 
 
+def _sample_enriched():
+    return {
+        "components": [{"name": "API GW", "type": "gateway"}],
+        "relationships": [],
+        "concerns": [
+            {
+                "id": "C1",
+                "title": "Risco no gateway",
+                "description": "Descrição do risco.",
+                "derived_from": ["I1"],
+                "affected_components": ["API GW"],
+                "severity": "high",
+                "category": "security",
+            },
+        ],
+    }
+
+
 def test_build_output_success():
     report = "\n\n".join(
         [
@@ -79,17 +97,19 @@ def test_build_output_success():
             "## 7. Nível de confiança\nAlto.",
         ]
     )
-    job = InputJob("j", None, "b", "k.pdf")
+    job = InputJob("upload-001", None, "b", "k.pdf")
     out = build_output_message_v1(
         job,
         report=report,
+        enriched=_sample_enriched(),
         validation_approved=True,
         validation_errors=[],
         elapsed_s=1.5,
     )
+    assert out["uploadId"] == "upload-001"
     assert out["status"] == "success"
-    assert out["report"]["executive_summary"] == "R."
-    assert out["validation"]["approved"] is True
+    assert "components" in out["analysis"]
+    assert out["analysis"]["risks"][0]["level"] == "HIGH"
 
 
 def test_build_output_validation_failed():
@@ -109,12 +129,14 @@ def test_build_output_validation_failed():
     out = build_output_message_v1(
         job,
         report=report,
+        enriched=_sample_enriched(),
         validation_approved=False,
         validation_errors=["erro x"],
         elapsed_s=2.0,
     )
     assert out["status"] == "failed"
     assert out["failure_stage"] == "validation"
+    assert len(out["analysis"]["components"]) == 1
 
 
 def test_build_output_pipeline_error():
@@ -122,6 +144,7 @@ def test_build_output_pipeline_error():
     out = build_output_message_v1(
         job,
         report=None,
+        enriched=None,
         validation_approved=False,
         validation_errors=[],
         elapsed_s=0.0,
@@ -129,10 +152,26 @@ def test_build_output_pipeline_error():
     )
     assert out["status"] == "failed"
     assert out["error"] == "boom"
+    assert out["analysis"] == {"components": [], "risks": [], "recommendations": []}
 
 
 def test_fit_message_payload_truncates():
     huge = "x" * 500_000
+    enriched = {
+        "components": [{"name": "Big", "type": "service", "role": huge}],
+        "relationships": [],
+        "concerns": [
+            {
+                "id": "C1",
+                "title": "T",
+                "description": huge,
+                "derived_from": ["I1"],
+                "affected_components": ["Big"],
+                "severity": "low",
+                "category": "other",
+            },
+        ],
+    }
     report = "\n\n".join(
         [
             "## 1. Resumo executivo\n" + huge,
@@ -148,6 +187,7 @@ def test_fit_message_payload_truncates():
     out = build_output_message_v1(
         job,
         report=report,
+        enriched=enriched,
         validation_approved=True,
         validation_errors=[],
         elapsed_s=1.0,

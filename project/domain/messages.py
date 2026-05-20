@@ -7,6 +7,7 @@ import urllib.parse
 from dataclasses import dataclass
 from typing import Any
 
+from domain.queue_analysis import build_analysis_from_enriched
 from domain.report_sections import markdown_to_structured_sections
 
 
@@ -83,6 +84,7 @@ def build_output_message_v1(
     job: InputJob,
     *,
     report: str | None,
+    enriched: dict[str, Any] | None = None,
     validation_approved: bool,
     validation_errors: list[str],
     elapsed_s: float,
@@ -90,26 +92,18 @@ def build_output_message_v1(
     report_raw_max_chars: int = 12_000,
 ) -> dict[str, Any]:
     """
-    Monta o dicionário serializável para JSON de saída (v1).
+    Monta o JSON de saída para a fila: uploadId + analysis (components, risks, recommendations).
     `pipeline_error`: exceção durante o pipeline (download/extract/etc.).
     """
     base: dict[str, Any] = {
-        "schema_version": 1,
-        "job_id": job.job_id,
-        "correlation_id": job.correlation_id,
-        "source": {"bucket": job.source_bucket, "key": job.source_key},
-        "elapsed_s": elapsed_s,
-        "validation": {
-            "approved": validation_approved,
-            "errors": list(validation_errors),
-        },
+        "uploadId": job.job_id,
+        "analysis": build_analysis_from_enriched(enriched),
     }
 
     if pipeline_error is not None:
         base["status"] = "failed"
         base["failure_stage"] = "pipeline"
         base["error"] = pipeline_error
-        base["report"] = {}
         return base
 
     parse = markdown_to_structured_sections(report or "")
@@ -117,14 +111,12 @@ def build_output_message_v1(
         base["status"] = "failed"
         base["failure_stage"] = "report_parse"
         base["error"] = "seções obrigatórias ausentes no relatório"
-        base["report"] = {}
         base["report_parse_missing_headers"] = parse.missing_headers
         if report:
             raw = report if len(report) <= report_raw_max_chars else report[:report_raw_max_chars] + "…"
             base["report_raw"] = raw
         return base
 
-    base["report"] = parse.sections
     base["status"] = "success" if validation_approved else "failed"
     if not validation_approved:
         base["failure_stage"] = "validation"
@@ -152,29 +144,38 @@ def fit_message_payload(payload: dict[str, Any], max_bytes: int) -> dict[str, An
     if _payload_utf8_size(out) <= max_bytes:
         return out
 
-    report = out.get("report")
-    if isinstance(report, dict):
+    analysis = out.get("analysis")
+    if isinstance(analysis, dict):
         for _ in range(24):
             if _payload_utf8_size(out) <= max_bytes:
                 break
-            for k in list(report.keys()):
-                if isinstance(report[k], str) and report[k]:
-                    new_len = max(len(report[k]) // 2, 0)
-                    report[k] = report[k][:new_len]
-                    if new_len > 0:
-                        report[k] += "…"
+            _shrink_analysis_strings(analysis)
 
-    if _payload_utf8_size(out) > max_bytes:
-        err = out.get("validation", {})
-        errs = err.get("errors") if isinstance(err, dict) else None
-        if isinstance(errs, list):
-            err["errors"] = [_truncate_utf8(str(e), 512) for e in errs[:30]]
-
-    if _payload_utf8_size(out) > max_bytes and isinstance(report, dict):
-        out["report"] = {"_truncated": True}
-        out["truncation_note"] = "corpo do relatório omitido após truncamento — ver logs"
+    if _payload_utf8_size(out) > max_bytes and isinstance(analysis, dict):
+        out["analysis"] = {"components": [], "risks": [], "recommendations": []}
+        out["truncation_note"] = "analysis omitida após truncamento — ver logs"
 
     return out
+
+
+def _shrink_analysis_strings(analysis: dict[str, Any]) -> None:
+    for comp in analysis.get("components") or []:
+        if isinstance(comp.get("description"), str) and comp["description"]:
+            comp["description"] = comp["description"][: max(len(comp["description"]) // 2, 0)] + "…"
+    for risk in analysis.get("risks") or []:
+        for field in ("description", "impact"):
+            if isinstance(risk.get(field), str) and risk[field]:
+                risk[field] = risk[field][: max(len(risk[field]) // 2, 0)] + "…"
+        mit = risk.get("mitigation")
+        if isinstance(mit, list) and mit:
+            risk["mitigation"] = mit[: max(len(mit) // 2, 1)]
+    for rec in analysis.get("recommendations") or []:
+        for field in ("description", "rationale"):
+            if isinstance(rec.get(field), str) and rec[field]:
+                rec[field] = rec[field][: max(len(rec[field]) // 2, 0)] + "…"
+        steps = rec.get("steps")
+        if isinstance(steps, list) and steps:
+            rec["steps"] = steps[: max(len(steps) // 2, 1)]
 
 
 def build_system_failure_output_v1(
@@ -191,14 +192,9 @@ def build_system_failure_output_v1(
     if source_bucket and source_key:
         src = {"bucket": source_bucket, "key": source_key}
     return {
-        "schema_version": 1,
-        "job_id": job_id,
-        "correlation_id": correlation_id,
-        "source": src,
+        "uploadId": job_id,
+        "analysis": build_analysis_from_enriched(None),
         "status": "failed",
         "failure_stage": stage,
         "error": error,
-        "elapsed_s": 0.0,
-        "validation": {"approved": False, "errors": []},
-        "report": {},
     }

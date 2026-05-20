@@ -98,6 +98,7 @@ def process_one_message(
         out = build_output_message_v1(
             job,
             report=result.report,
+            enriched=result.enriched,
             validation_approved=result.validation.approved,
             validation_errors=list(result.validation.errors),
             elapsed_s=result.elapsed_s,
@@ -108,6 +109,7 @@ def process_one_message(
         out = build_output_message_v1(
             job,
             report=None,
+            enriched=None,
             validation_approved=False,
             validation_errors=[],
             elapsed_s=elapsed,

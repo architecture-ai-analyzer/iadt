@@ -9,6 +9,7 @@ config/logging_config.py
 config/settings.py
 domain/__init__.py
 domain/messages.py
+domain/queue_analysis.py
 domain/report_layout.py
 domain/report_sections.py
 iadt_pipeline.egg-info/PKG-INFO
@@ -44,5 +45,6 @@ tests/test_p1_extraction.py
 tests/test_p2_risk_analysis.py
 tests/test_p3_report_generation.py
 tests/test_p4_validation.py
+tests/test_queue_analysis.py
 tests/test_report_sections.py
 tests/test_sqs_worker_unit.py
