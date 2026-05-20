@@ -1,5 +1,8 @@
+adapters
 config
+domain
 llm
 orchestrator
 pipelines
 schemas
+worker

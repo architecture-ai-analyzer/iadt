@@ -23,6 +23,9 @@ dev = [
 [project.scripts]
 iadt-worker = "worker:main"
 
+[tool.setuptools]
+py-modules = ["worker"]
+
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["config*", "llm*", "pipelines*", "orchestrator*", "schemas*", "domain*", "adapters*"]
