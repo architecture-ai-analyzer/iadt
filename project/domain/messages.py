@@ -79,6 +79,35 @@ def _parse_custom_v1(data: dict[str, Any], *, fallback_job_id: str) -> InputJob:
         source_key=str(key),
     )
 
+def peek_job_id_from_message_body(body: str, *, fallback: str) -> str:
+    """
+    Lê `job_id` do JSON do corpo SQS (mesma regra de envelope SNS que `parse_input_message`).
+    Se não houver `job_id` (ex.: evento S3-only) ou o JSON for inválido, retorna `fallback`.
+    """
+    if not (body or "").strip():
+        return fallback
+    try:
+        data: Any = json.loads(body)
+    except json.JSONDecodeError:
+        return fallback
+
+    if isinstance(data, dict) and data.get("Message") and isinstance(data["Message"], str):
+        try:
+            data = json.loads(data["Message"])
+        except json.JSONDecodeError:
+            return fallback
+
+    if not isinstance(data, dict):
+        return fallback
+
+    if data.get("Records") and isinstance(data["Records"], list):
+        return fallback
+
+    job_id = data.get("job_id")
+    if job_id is not None and str(job_id).strip():
+        return str(job_id).strip()
+    return fallback
+
 
 def build_output_message_v1(
     job: InputJob,
