@@ -25,6 +25,7 @@ from domain.messages import (
     build_system_failure_output_v1,
     fit_message_payload,
     parse_input_message,
+    peek_job_id_from_message_body,
 )
 from orchestrator.pipeline import run
 
@@ -170,7 +171,10 @@ def run_forever(
             continue
         msg = messages[0]
         body = msg.get("Body") or ""
-        mid = msg.get("MessageId") or "unknown"
+        sqs_message_id = msg.get("MessageId") or ""
+        mid = peek_job_id_from_message_body(
+            body, fallback=sqs_message_id or "unknown"
+        )
         rh = msg.get("ReceiptHandle") or ""
         if not rh:
             logger.error("missing_receipt_handle", extra={"extra": {"message_id": mid}})
