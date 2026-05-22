@@ -62,6 +62,7 @@ def test_process_one_message_send_delete_and_cleanup(monkeypatch):
     sqs.delete_message.assert_called_once()
     call_kw = sqs.send_message.call_args.kwargs
     out = json.loads(call_kw["MessageBody"])
-    assert out["job_id"] == "job-x"
+    assert out["uploadId"] == "job-x"
     assert out["status"] == "success"
-    assert "executive_summary" in out["report"]
+    assert "analysis" in out
+    assert "components" in out["analysis"]
