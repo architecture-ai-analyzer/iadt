@@ -145,11 +145,17 @@ def run_forever(
         raise RuntimeError("IADT_INPUT_QUEUE_URL e IADT_OUTPUT_QUEUE_URL devem estar definidos")
 
     # Configure boto3 clients
+    # Use credentials from environment or instance role if available
     client_kwargs = {
         "region_name": reg,
-        "aws_access_key_id": AWS_ACCESS_KEY_ID,
-        "aws_secret_access_key": AWS_SECRET_ACCESS_KEY,
     }
+    
+    # Only use explicit credentials if they're not the default "test" values
+    # In production EKS, the node IAM role will be used automatically
+    if AWS_ACCESS_KEY_ID and AWS_ACCESS_KEY_ID != "test":
+        client_kwargs["aws_access_key_id"] = AWS_ACCESS_KEY_ID
+    if AWS_SECRET_ACCESS_KEY and AWS_SECRET_ACCESS_KEY != "test":
+        client_kwargs["aws_secret_access_key"] = AWS_SECRET_ACCESS_KEY
 
     sqs = boto3.client("sqs", **client_kwargs)
     s3 = boto3.client("s3", **client_kwargs)

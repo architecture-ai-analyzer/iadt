@@ -1,8 +1,8 @@
 # Service for IADT (optional - for health checks and metrics)
-resource "kubernetes_service" "iadt_worker" {
+resource "kubernetes_service_v1" "iadt_worker" {
   metadata {
     name      = "iadt-worker"
-    namespace = kubernetes_namespace.iadt.metadata[0].name
+    namespace = kubernetes_namespace_v1.iadt.metadata[0].name
     labels = {
       app = "iadt-worker"
     }
@@ -23,5 +23,5 @@ resource "kubernetes_service" "iadt_worker" {
     type = "ClusterIP"
   }
 
-  depends_on = [kubernetes_namespace.iadt]
+  depends_on = [kubernetes_namespace_v1.iadt]
 }

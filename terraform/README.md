@@ -5,21 +5,22 @@ Infraestrutura como código (Terraform) para o IADT em AWS EKS. **Simplificado p
 ## 📋 Recursos Provisionados
 
 ### AWS
-- **SQS**:
-  - Fila de entrada: recebe tarefas do upload-service
-  - Fila de saída: publica resultados
+- **SQS** (REFERENCIADAS - já existem):
+  - `upload-queue`: recebe tarefas do upload-service
+  - `report-generation-queue`: publica resultados
   - Retenção: 1 dia (Free tier friendly)
   - Sem DLQ (simplificado)
 
-- **IAM**: Role IRSA para Kubernetes com permissões SQS + S3
+- **S3**: Referência ao bucket do upload-service
 
 ### Kubernetes (EKS)
 - **Namespace**: `iadt` isolado
-- **Deployment**: 1 pod fixo com:
+- **Service Account**: `iadt-worker` simples (sem IRSA)
+- **Deployment**: 1-3 pods com scaling automático:
   - CPU: 250m → 500m (muito leve)
   - Memory: 256Mi → 1Gi
   - Health checks básicos
-  - Sem HPA (simplificado)
+  - HPA ativo (min: 1, max: 3 replicas)
 
 - **Service**: ClusterIP para métricas
 - **ConfigMap**: Variáveis de ambiente
@@ -29,16 +30,31 @@ Infraestrutura como código (Terraform) para o IADT em AWS EKS. **Simplificado p
 
 ```
 terraform/
-├── modules/
-│   ├── sqs/              # Módulo SQS simplificado
-│   └── iam/              # Módulo IRSA
-├── envs/
-│   └── dev/              # Apenas dev (homolog/prod são README)
-├── main.tf              # Instancia módulos
-├── variables.tf         # Variáveis globais
-├── data.tf              # Remote states
-├── providers.tf         # AWS provider
-└── outputs.tf           # Saídas
+├── README.md            # Esta documentação
+├── providers.tf         # (Vazio - tudo em envs/dev)
+├── main.tf             # (Vazio - tudo em envs/dev)
+├── variables.tf        # (Vazio - tudo em envs/dev)
+├── data.tf             # (Vazio - tudo em envs/dev)
+├── outputs.tf          # (Vazio - tudo em envs/dev)
+├── modules/            # (DEPRECATED - deixado por referência)
+│   ├── sqs/
+│   └── iam/
+└── envs/
+    └── dev/            # ⭐ AQUI! Tudo está aqui
+        ├── providers.tf
+        ├── main.tf
+        ├── variables.tf
+        ├── outputs.tf
+        ├── data-sqs.tf
+        ├── k8s-namespace.tf
+        ├── k8s-service-account.tf
+        ├── k8s-configmap.tf
+        ├── k8s-secret.tf
+        ├── k8s-deployment.tf
+        ├── k8s-hpa.tf
+        ├── k8s-service.tf
+        ├── api-keys.tf
+        └── terraform.tfvars
 ```
 
 ## 🚀 Quick Start
@@ -46,8 +62,27 @@ terraform/
 ### Pré-requisitos
 - Terraform >= 1.0
 - AWS CLI + kubectl configurados
-- S3 bucket e DynamoDB table para state
-- Remote states de network-infra, infra-eks, upload-service
+- Filas SQS criadas: `upload-queue`, `report-generation-queue`
+- EKS cluster disponível
+- S3 bucket para state: `tf-state-ai-architecture-analyzer`
+
+### Inicializar (SEMPRE EM DEV!)
+
+```bash
+cd envs/dev
+terraform init
+```
+
+❌ **NÃO** rode `terraform init` na raiz
+✅ **SEMPRE** rode em `envs/dev/`
+
+### Aplicar
+
+```bash
+cd envs/dev
+terraform plan -var-file="terraform.tfvars"
+terraform apply -var-file="terraform.tfvars"
+```
 
 ### Deploy
 

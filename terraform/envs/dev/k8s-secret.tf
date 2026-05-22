@@ -1,8 +1,8 @@
 # Secret for Anthropic API Key (optional fallback)
-resource "kubernetes_secret" "anthropic_api_key" {
+resource "kubernetes_secret_v1" "anthropic_api_key" {
   metadata {
     name      = "iadt-anthropic-api-key"
-    namespace = kubernetes_namespace.iadt.metadata[0].name
+    namespace = kubernetes_namespace_v1.iadt.metadata[0].name
   }
 
   type = "Opaque"
@@ -16,10 +16,10 @@ resource "kubernetes_secret" "anthropic_api_key" {
 }
 
 # Secret for OpenAI API Key
-resource "kubernetes_secret" "openai_api_key" {
+resource "kubernetes_secret_v1" "openai_api_key" {
   metadata {
     name      = "iadt-openai-api-key"
-    namespace = kubernetes_namespace.iadt.metadata[0].name
+    namespace = kubernetes_namespace_v1.iadt.metadata[0].name
   }
 
   type = "Opaque"

@@ -1,17 +1,31 @@
+variable "project_name" {
+  description = "Project name"
+  type        = string
+  default     = "iadt"
+}
+
 variable "region_default" {
-  default = "us-east-2"
+  description = "AWS region"
+  type        = string
+  default     = "us-east-2"
+}
+
+variable "s3_bucket_name" {
+  description = "S3 bucket name for file uploads (manually created)"
+  type        = string
+  default     = "upload-service-bucket-ai-analyzer"
 }
 
 variable "environment" {
-  default = "dev"
-}
-
-variable "project_name" {
-  default = "iadt"
+  description = "Environment name"
+  type        = string
+  default     = "dev"
 }
 
 variable "kubernetes_namespace" {
-  default = "iadt"
+  description = "Kubernetes namespace"
+  type        = string
+  default     = "iadt"
 }
 
 variable "kubernetes_service_account" {
@@ -19,7 +33,7 @@ variable "kubernetes_service_account" {
 }
 
 variable "iadt_image" {
-  default = "your-registry/iadt-worker:latest"
+  default = "luigigb/iadt-worker:latest"
 }
 
 variable "iadt_cpu_request" {
@@ -42,20 +56,12 @@ variable "llm_provider" {
   default = "openai"
 }
 
-variable "openai_api_key" {
-  default = ""
-}
-
 variable "openai_model_text" {
   default = "gpt-4o-mini"
 }
 
 variable "openai_model_vision" {
   default = "gpt-4o"
-}
-
-variable "anthropic_api_key" {
-  default = ""
 }
 
 variable "claude_model_text" {
@@ -72,4 +78,16 @@ variable "log_level" {
 
 variable "log_format" {
   default = "json"
+}
+
+variable "aws_access_key_id" {
+  description = "AWS Access Key ID for pod credentials"
+  type        = string
+  sensitive   = true
+}
+
+variable "aws_secret_access_key" {
+  description = "AWS Secret Access Key for pod credentials"
+  type        = string
+  sensitive   = true
 }

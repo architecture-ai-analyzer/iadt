@@ -1,8 +1,8 @@
 # IADT Worker Deployment
-resource "kubernetes_deployment" "iadt_worker" {
+resource "kubernetes_deployment_v1" "iadt_worker" {
   metadata {
     name      = "iadt-worker"
-    namespace = kubernetes_namespace.iadt.metadata[0].name
+    namespace = kubernetes_namespace_v1.iadt.metadata[0].name
     labels = {
       app = "iadt-worker"
     }
@@ -25,12 +25,12 @@ resource "kubernetes_deployment" "iadt_worker" {
       }
 
       spec {
-        service_account_name = data.terraform_remote_state.root.outputs.kubernetes_service_account
+        service_account_name = kubernetes_service_account_v1.iadt_worker.metadata[0].name
 
         container {
           name  = "iadt-worker"
           image = var.iadt_image
-          image_pull_policy = "IfNotPresent"
+          image_pull_policy = "Always"
 
           command = ["python", "-m", "worker"]
 
@@ -47,7 +47,7 @@ resource "kubernetes_deployment" "iadt_worker" {
 
           env_from {
             config_map_ref {
-              name = kubernetes_config_map.iadt_config.metadata[0].name
+              name = kubernetes_config_map_v1.iadt_config.metadata[0].name
             }
           }
 
@@ -96,5 +96,5 @@ resource "kubernetes_deployment" "iadt_worker" {
     }
   }
 
-  depends_on = [kubernetes_namespace.iadt]
+  depends_on = [kubernetes_namespace_v1.iadt]
 }

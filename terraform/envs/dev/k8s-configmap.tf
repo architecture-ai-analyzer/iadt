@@ -1,5 +1,5 @@
 # Kubernetes Namespace
-resource "kubernetes_namespace" "iadt" {
+resource "kubernetes_namespace_v1" "iadt" {
   metadata {
     name = var.kubernetes_namespace
     labels = {
@@ -9,25 +9,27 @@ resource "kubernetes_namespace" "iadt" {
 }
 
 # ConfigMap with environment configuration
-resource "kubernetes_config_map" "iadt_config" {
+resource "kubernetes_config_map_v1" "iadt_config" {
   metadata {
     name      = "iadt-config"
-    namespace = kubernetes_namespace.iadt.metadata[0].name
+    namespace = kubernetes_namespace_v1.iadt.metadata[0].name
   }
 
   data = {
     # AWS Configuration
     AWS_REGION                    = var.region_default
     CLOUD_AWS_REGION              = var.region_default
+    AWS_ACCESS_KEY_ID             = var.aws_access_key_id
+    AWS_SECRET_ACCESS_KEY         = var.aws_secret_access_key
     
     # SQS Configuration
-    IADT_INPUT_QUEUE_URL          = data.terraform_remote_state.root.outputs.input_queue_url
-    IADT_OUTPUT_QUEUE_URL         = data.terraform_remote_state.root.outputs.output_queue_url
+    IADT_INPUT_QUEUE_URL          = data.aws_sqs_queue.input_queue.url
+    IADT_OUTPUT_QUEUE_URL         = data.aws_sqs_queue.output_queue.url
     IADT_WORKER_VISIBILITY_TIMEOUT = "300"
     IADT_WORKER_OUTPUT_MAX_BYTES   = "262144" # 256KB
     
     # S3 Configuration
-    S3_BUCKET                     = data.terraform_remote_state.upload_service.outputs.s3_bucket_id
+    S3_BUCKET                     = var.s3_bucket_name
     S3_REGION                     = var.region_default
     
     # LLM Provider Configuration

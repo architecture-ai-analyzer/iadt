@@ -1,27 +1,5 @@
 terraform {
   required_version = ">= 1.0"
-  
-  required_providers {
-    aws = {
-      source  = "hashicorp/aws"
-      version = "~> 5.0"
-    }
-    kubernetes = {
-      source  = "hashicorp/kubernetes"
-      version = "~> 2.20"
-    }
-  }
 }
 
-provider "aws" {
-  region = var.region_default
-  
-  default_tags {
-    tags = {
-      Environment = var.environment
-      ManagedBy   = "Terraform"
-      Repository  = "iadt"
-      Project     = var.project_name
-    }
-  }
-}
+# Providers configured in envs/dev/
