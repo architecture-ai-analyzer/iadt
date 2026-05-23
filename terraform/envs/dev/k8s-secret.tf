@@ -25,7 +25,7 @@ resource "kubernetes_secret_v1" "openai_api_key" {
   type = "Opaque"
 
   data = {
-    OPENAI_API_KEY = base64encode(var.openai_api_key)
+    OPENAI_API_KEY = var.openai_api_key
   }
 
   # Only create if key is provided
